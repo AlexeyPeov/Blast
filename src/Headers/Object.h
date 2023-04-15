@@ -63,7 +63,7 @@ namespace object{
 
     void deserialize_objects(const std::vector<char>& data, std::vector<Object>& objects) {
         if (data.size() % sizeof(Object) != 0) {
-            std::cerr << "Error: data size is not a multiple of Object size\n";
+            std::cerr << "data size is not a multiple of Object size, not doing anything..\n";
             return;
         }
         size_t object_count = data.size() / sizeof(Object);

@@ -37,7 +37,25 @@ struct Client {
         std::cout << "Client stopped.\n";
     }
 
-    bool receive_data() {
+    static bool send_all_bytes(const void* data, std::size_t size, sf::TcpSocket &sock) {
+        std::size_t total_sent = 0;
+        int retries = 0;
+        while (total_sent < size) {
+            std::size_t sent;
+            if (sock.send(static_cast<const char*>(data) + total_sent, size - total_sent, sent) != sf::Socket::Done) {
+                if (++retries > 3) {
+                    std::cerr << " : too many retries\n";
+                    return false;
+                }
+                continue;
+            }
+            total_sent += sent;
+            retries = 0;
+        }
+        return true;
+    }
+
+    void receive_data() {
         if (active) {
             MessageType message_type;
             int buffer_length = max_players * sizeof(Object);
@@ -48,61 +66,40 @@ struct Client {
 
                 if (message_type == MessageType::ID) {
                     if (socket.receive(&id, sizeof(id), data_len) == sf::Socket::Done) {
-                        std::cout << "Received id from server: " << id << "\n";
                         this->object.id = id;
-                        return true;
                     } else {
                         std::cerr << "Error receiving id from server\n";
-                        return false;
                     }
 
                 } else if (message_type == MessageType::OBJECTS) {
-                    std::cout << "Received objects from server\n";
                     auto status = this->socket.receive(buffer, sizeof(buffer), data_len);
 
                     if (status == sf::Socket::Done && data_len > 0) {
-                        std::cout<< "RECEIVED DATA FROM SERVER, len: " << data_len << "\n";
                         std::vector<char> data(buffer, buffer + data_len);
                         object::deserialize_objects(data, this->objects);
-                        print_vector();
-                        return true;
                     } else if (status == sf::Socket::NotReady || status == sf::Socket::Partial) {
-                        // No data received
-                        return true;
-                    } else {
+                        std::cerr << "No data received..\n";
+                    } else if(status == sf::Socket::Disconnected){
+                        std::cerr << "Server disconnected...\n";
+                        disconnect();
+                    }
+                    else {
                         std::cerr << "Error receiving data from Server\n";
-                        return false;
                     }
                 }
-            } else {
-                return false;
             }
         }
-        return false;
     }
 
     bool send_data() {
         if (active) {
             auto data = object::serialize_object(this->object);
-
-            std::cout << "\n\n";
-            for (auto &obj: this->objects) {
-                std::cout << "id: " << obj.id << " posx: " << obj.pos_x << " posy : " << obj.pos_y << " Action: "
-                          << obj.action << "\n";
+            if (send_all_bytes(data.data(), data.size(), this->socket)){
+                return true;
             }
-            std::cout << "\n\nSENDING DATA: ";
-
-            std::cout << "id: " << this->object.id << " posx: " << this->object.pos_x << " posy : "
-                      << this->object.pos_y << " Action: " << this->object.action << "\n";
-            std::cout << "\n\n";
-
-            if (socket.send(data.data(), data.size()) != sf::Socket::Done) {
-                std::cerr << "Error sending data to Server\n";
-                return false;
-            }
-
-            std::cout << "END CLIENT SEND DATA, SUCCESS\n";
-            return true;
+            std::cerr << "Error sending data to Server\n";
+            disconnect();
+            return false;
         }
         return false;
     }

@@ -306,8 +306,6 @@ struct Map {
         }
 
         if (main_player.hp > 0) {
-            main_player.timeSinceLastShot += 1;
-
             sf::Vector2i mouse_position = sf::Mouse::getPosition(window);
             sf::Vector2f worldMousePos = window.mapPixelToCoords(mouse_position);
 
@@ -327,8 +325,6 @@ struct Map {
             client.object.pos_y = main_player.sprite.getPosition().y;
             client.object.rotation = main_player.sprite.getRotation();
         }
-
-
     }
 
 
@@ -340,6 +336,14 @@ struct Map {
                 collision(wall.sprite, player.sprite, wall_can_move, player_can_move);
             }
             collision(wall.sprite, main_player.sprite, wall_can_move, player_can_move);
+        }
+    }
+
+    void check_collision_player_players(){
+        for(auto& [player_id, other_player] : players){
+            int main_player_can_move = false;
+            int other_player_can_move = false;
+            collision(main_player.sprite, other_player.sprite, main_player_can_move, other_player_can_move);
         }
     }
 

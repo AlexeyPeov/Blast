@@ -186,10 +186,12 @@ public:
             map.update_players(client);
             map.update_missiles();
             map.update_explosions();
+            map.update_player();
 
             //collision
             map.check_collision_walls_players();
             map.check_collision_missiles_walls_players();
+            map.check_collision_player_players();
 
 
 
