@@ -43,26 +43,43 @@ struct Map {
 
     std::vector<Wall> walls;
     std::vector<sf::Sprite> floors;
-    std::vector<Player> players;
+    std::unordered_map<int, Player> players;
     std::vector<Animation> explosions;
     std::vector<Missile> missiles;
     Player main_player;
 
     void init_map_textures() {
 
-        this->player_texture.loadFromFile(current_dir() + "/textures/personStationary.png");
+        // release
+//        this->player_texture.loadFromFile(current_dir() + "/textures/personStationary.png");
+//
+//        this->wall_texture_unbreakable.loadFromFile(current_dir() + "/textures/unbreakableBorder.png");
+//        this->floor_texture.loadFromFile(current_dir() + "/textures/floor.png");
+//        this->wall_texture_5.loadFromFile(current_dir() + "/textures/border5.png");
+//        this->wall_texture_4.loadFromFile(current_dir() + "/textures/border4.png");
+//        this->wall_texture_3.loadFromFile(current_dir() + "/textures/border3.png");
+//        this->wall_texture_2.loadFromFile(current_dir() + "/textures/border2.png");
+//        this->wall_texture_1.loadFromFile(current_dir() + "/textures/border1.png");
+//
+//        this->missile_texture.loadFromFile(current_dir() + "/textures/missle.png");
+//
+//        this->explosion_texture.loadFromFile(current_dir() + "/textures/explosion.png");
 
-        this->wall_texture_unbreakable.loadFromFile(current_dir() + "/textures/unbreakableBorder.png");
-        this->floor_texture.loadFromFile(current_dir() + "/textures/floor.png");
-        this->wall_texture_5.loadFromFile(current_dir() + "/textures/border5.png");
-        this->wall_texture_4.loadFromFile(current_dir() + "/textures/border4.png");
-        this->wall_texture_3.loadFromFile(current_dir() + "/textures/border3.png");
-        this->wall_texture_2.loadFromFile(current_dir() + "/textures/border2.png");
-        this->wall_texture_1.loadFromFile(current_dir() + "/textures/border1.png");
+        //clion debug
+        this->player_texture.loadFromFile(current_dir() + "/../textures/personStationary.png");
 
-        this->missile_texture.loadFromFile(current_dir() + "/textures/missle.png");
+        this->wall_texture_unbreakable.loadFromFile(current_dir() + "/../textures/unbreakableBorder.png");
+        this->floor_texture.loadFromFile(current_dir() + "/../textures/floor.png");
+        this->wall_texture_5.loadFromFile(current_dir() + "/../textures/border5.png");
+        this->wall_texture_4.loadFromFile(current_dir() + "/../textures/border4.png");
+        this->wall_texture_3.loadFromFile(current_dir() + "/../textures/border3.png");
+        this->wall_texture_2.loadFromFile(current_dir() + "/../textures/border2.png");
+        this->wall_texture_1.loadFromFile(current_dir() + "/../textures/border1.png");
 
-        this->explosion_texture.loadFromFile(current_dir() + "/textures/explosion.png");
+        this->missile_texture.loadFromFile(current_dir() + "/../textures/missle.png");
+
+        this->explosion_texture.loadFromFile(current_dir() + "/../textures/explosion.png");
+
 
 
         this->player_sprite = sf::Sprite(player_texture);
@@ -114,29 +131,26 @@ struct Map {
 
     }
 
-    void init_main_player(const Client &client) {
-        int movement_speed = 3;
+    void init_main_player() {
+        float movement_speed = 2;
         int rotation_degree = 0;
         int hp = 100;
-        main_player = Player(player_sprite, movement_speed, rotation_degree, hp, client.object.id);
+        main_player = Player(player_sprite, movement_speed, rotation_degree, hp, 0);
         config_sprite(main_player.sprite);
         main_player.sprite.setPosition(100, 100);
     }
 
-    void init_players(const Client &client) {
-
-        int movement_speed = 3;
+    Player init_new_player(int id, float pos_x, float pos_y) const {
+        float movement_speed = 2;
         int rotation_degree = 0;
         int hp = 100;
-        for(auto player : client.objects){
-            Player connected_player = Player(player_sprite, movement_speed, rotation_degree, hp, player.id);
-            connected_player.sprite.setPosition(player.pos_x, player.pos_y);
-            config_sprite(main_player.sprite);
-            players.push_back(connected_player);
-        }
+        Player player = Player(player_sprite, movement_speed, rotation_degree, hp, id);
+        config_sprite(player.sprite);
+        player.sprite.setPosition(pos_x, pos_y);
+        return player;
     }
 
-    void init_missile(Player &player) {
+    bool init_missile(Player &player) {
         if (player.timeSinceLastShot > player.shootDelay) {
             int movement_speed = 40;
             int rotation_degree = player.rotation_degree;
@@ -153,7 +167,9 @@ struct Map {
             player.timeSinceLastShot = 0;
 
             missiles.push_back(missile);
+            return true;
         }
+        return false;
     }
 
     void init_explosion(Missile &missile) {
@@ -211,29 +227,68 @@ struct Map {
         }
     }
 
+//    void init_players(const Client &client) {
+//
+//        int movement_speed = 3;
+//        int rotation_degree = 0;
+//        int hp = 100;
+//        for(auto player : client.objects){
+//            Player connected_player = Player(player_sprite, movement_speed, rotation_degree, hp);
+//            connected_player.sprite.setPosition(player.pos_x, player.pos_y);
+//            config_sprite(main_player.sprite);
+//            players.push_back(connected_player);
+//        }
+//    }
+
+
     void update_players(Client &client) {
 
         /*
-         * check if there are new connected players, if so - add them to list of players
+         * check if there are new connected players
          *
          *      if client.objects.size() > players.size()
-         *          for each object in client.objects
-         *              for each player in players
-         *                  if object
+         *          players[id] = client.object;
          *
          *
-         * check if there are players that disconnected, if so - delete them
+         *
+         * check if there are players that disconnected
+         *        if client.objects.size() < players.size()
+         *              delete the player that is not present
+         *
          *
          *
          * */
-
-        for (auto player = players.begin(); player != players.end(); ) {
-            if (player->hp <= 0){
-                player = players.erase(player);
-            } else {
-                player->timeSinceLastShot += 1;
-                player++;
+        if (client.objects.size() < players.size()){
+            for (auto player = players.begin(); player != players.end(); ) {
+                bool found = false;
+                for (const auto& obj : client.objects) {
+                    if (player->first == obj.id) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    player = players.erase(player);
+                } else {
+                    player++;
+                }
             }
+        }
+
+        for (auto &object : client.objects){
+
+            if (players.find(object.id) == players.end()){
+                players[object.id] = init_new_player(object.id, object.pos_x, object.pos_y);
+            }
+            bool is_shooting = object::is_shooting(object);
+
+            players[object.id].sprite.setRotation(object.rotation);
+            players[object.id].sprite.setPosition(object.pos_x,object.pos_y);
+            if(is_shooting){
+                init_missile(players[object.id]);
+            }
+            players[object.id].timeSinceLastShot += 1;
+
         }
     }
 
@@ -244,17 +299,36 @@ struct Map {
     }
 
 
-    void main_player_move(sf::View &view, sf::RenderWindow &window){
+    void main_player_move(sf::View &view, sf::RenderWindow &window, Client &client){
 
-        sf::Vector2i mouse_position = sf::Mouse::getPosition(window);
-        sf::Vector2f worldMousePos = window.mapPixelToCoords(mouse_position);
-
-        view.setCenter(main_player.sprite.getPosition());
-        window.setView(view);
-        main_player.move(worldMousePos);
-        if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
-            init_missile(main_player);
+        if(main_player.id == 0){
+            main_player.id = client.id;
         }
+
+        if (main_player.hp > 0) {
+            main_player.timeSinceLastShot += 1;
+
+            sf::Vector2i mouse_position = sf::Mouse::getPosition(window);
+            sf::Vector2f worldMousePos = window.mapPixelToCoords(mouse_position);
+
+            view.setCenter(main_player.sprite.getPosition());
+            window.setView(view);
+            object::dont_move(client.object);
+            object::dont_shoot(client.object);
+            if (main_player.move(worldMousePos)) {
+                object::move(client.object);
+            }
+            if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+                if (init_missile(main_player)) {
+                    object::shoot(client.object);
+                }
+            }
+            client.object.pos_x = main_player.sprite.getPosition().x;
+            client.object.pos_y = main_player.sprite.getPosition().y;
+            client.object.rotation = main_player.sprite.getRotation();
+        }
+
+
     }
 
 
@@ -262,7 +336,7 @@ struct Map {
         for(auto& wall : walls){
             int wall_can_move = false;
             int player_can_move = true;
-            for (auto& player : players){
+            for (auto& [id, player] : players){
                 collision(wall.sprite, player.sprite, wall_can_move, player_can_move);
             }
             collision(wall.sprite, main_player.sprite, wall_can_move, player_can_move);
@@ -292,7 +366,7 @@ struct Map {
                         break;
                     }
                 }
-                for (auto& player : players) {
+                for (auto& [id, player] : players) {
                     if (collision(player.sprite, missile.sprite, wall_can_move, missile_can_move)) {
                         player.hp -= 50;
                         missile.life = false;
@@ -322,7 +396,7 @@ struct Map {
         for (const auto& missile : missiles) window.draw(missile.sprite);
     }
     void draw_players(sf::RenderWindow &window){
-        for (const auto& player : players) window.draw(player.sprite);
+        for (const auto& [id,player] : players) window.draw(player.sprite);
     }
     void draw_explosions(sf::RenderWindow &window){
         window.draw(main_player.sprite);

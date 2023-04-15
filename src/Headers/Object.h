@@ -1,6 +1,5 @@
 #pragma once
 
-#include <stdio.h>
 #include <vector>
 #include <cstring>
 
@@ -11,6 +10,7 @@ struct Object {
     int id;
     float pos_x;
     float pos_y;
+    float rotation;
     short action;
 };
 
@@ -23,6 +23,14 @@ namespace object{
 
     void shoot(Object &object){
         object.action |= SHOOT;
+    }
+
+    void dont_move(Object &object){
+        object.action &= ~MOVE;
+    }
+
+    void dont_shoot(Object &object){
+        object.action &= ~SHOOT;
     }
 
     bool is_moving(Object &object){
@@ -54,12 +62,20 @@ namespace object{
     }
 
     void deserialize_objects(const std::vector<char>& data, std::vector<Object>& objects) {
+        if (data.size() % sizeof(Object) != 0) {
+            std::cerr << "Error: data size is not a multiple of Object size\n";
+            return;
+        }
         size_t object_count = data.size() / sizeof(Object);
         objects.resize(object_count);
         memcpy(objects.data(), data.data(), data.size());
     }
 
     void deserialize_object(const std::vector<char>& data, Object & object) {
+        if (data.size() < sizeof(Object)) {
+            std::cerr << "Error: not enough data to deserialize Object\n";
+            return;
+        }
         memcpy(&object, data.data(), sizeof(Object));
     }
 }

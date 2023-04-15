@@ -1,3 +1,6 @@
 .vs
 .vsxproj
 .vscode
+cmake-build-debug
+.idea
+cmake-build-debug-coverage

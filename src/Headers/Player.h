@@ -10,7 +10,7 @@ struct Player : Entity {
     int timeSinceLastShot = 0;
 
     Player(){}
-    Player(sf::Sprite sprite, int movement_speed, int rotation_degree, int hp, int id)
-        : Entity{ std::move(sprite), movement_speed, rotation_degree}, hp{hp}, id{id} {}
+    Player(sf::Sprite sprite, float movement_speed, int rotation_degree, int hp, int id)
+        : Entity{ std::move(sprite), movement_speed, rotation_degree}, hp{hp}, id{id}{}
 
 };
