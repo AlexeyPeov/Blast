@@ -32,29 +32,29 @@ struct Server {
 
     bool receive_data() {
         for (auto client = clients.begin(); client != clients.end();) {
-            std::cout << "SERVER RECEIVING DATA FROM CLIENT\n";
+            //std::cout << "SERVER RECEIVING DATA FROM CLIENT\n";
             int buffer_length = max_players * sizeof(Object);
             char buffer[buffer_length];
             std::size_t data_len = 0;
             auto status = (*client)->socket.receive(buffer, sizeof(buffer), data_len);
-            std::cout << "WRITING TO BUFFER INSIDE SERVER::RECEIVE_DATA, clients.size(): " << clients.size() << " \n";
+            //std::cout << "WRITING TO BUFFER INSIDE SERVER::RECEIVE_DATA, clients.size(): " << clients.size() << " \n";
             if (status == sf::Socket::Done) {
                 // Data was received
-                std::cout << "Received " << data_len << " bytes from client: ";
+                //std::cout << "Received " << data_len << " bytes from client: ";
                 std::vector<char> data(buffer, buffer + data_len);
                 object::deserialize_object(data, (*client)->object);
-                std::cout << "Id :" << (*client)->object.id << " posx: " << (*client)->object.pos_x << " posy: " << (*client)->object.pos_y << " action : " << (*client)->object.action << "\n";
+              //  std::cout << "Id :" << (*client)->object.id << " posx: " << (*client)->object.pos_x << " posy: " << (*client)->object.pos_y << " action : " << (*client)->object.action << "\n";
                 client++;
-                std::cout << "IDK..\n";
+              //  std::cout << "IDK..\n";
                 continue;
             } else if (status == sf::Socket::Disconnected) {
-                std::cout << "ERASING OBJECT AND CLIENT DATA FROM SERVER\n";
+             //   std::cout << "ERASING OBJECT AND CLIENT DATA FROM SERVER\n";
                 objects.erase((*client)->id);
                 client = clients.erase(client);
                 std::cout << "SOCKET DISCONNECTED\n";
             } else {
                 client++;
-                puts("DIDNT RECIEVE DATA FROM CLIENT");
+             //   puts("DIDNT RECIEVE DATA FROM CLIENT");
                 return false;
             }
         }
@@ -73,9 +73,9 @@ struct Server {
 
             if (new_client->socket.send(&message_type, sizeof(message_type)) != sf::Socket::Done ||
                 new_client->socket.send(&new_client->id, sizeof(new_client->id)) != sf::Socket::Done) {
-                std::cerr << "Error sending id to client\n";
+                //std::cerr << "Error sending id to client\n";
             } else {
-                std::cout << "sent id to client, id = " << new_client_id << "\n";
+                //std::cout << "sent id to client, id = " << new_client_id << "\n";
                 clients.push_back(std::move(new_client));
                 std::cout << "NEW CLIENT CONNECTED!\n";
             }
@@ -99,8 +99,8 @@ struct Server {
 
         for (auto& client : clients){
                 objects[client->id] = client->object;
-                std::cout << "\n\nADDED/MODIFIED OBJECT TO SERVER'S OBJECTS: \n";
-                std::cout << "ID: " << client->id << " POSx: " << client->object.pos_x << "\n" << "SERVER'S OBJECT'S SIZE: " << objects.size() << "\n\n";
+                //std::cout << "\n\nADDED/MODIFIED OBJECT TO SERVER'S OBJECTS: \n";
+                //std::cout << "ID: " << client->id << " POSx: " << client->object.pos_x << "\n" << "SERVER'S OBJECT'S SIZE: " << objects.size() << "\n\n";
         }
 
 
@@ -115,12 +115,12 @@ struct Server {
 
             (*client)->objects.clear();
 
-            std::cout << "\nWHAT TO SEND TO CLIENT " << (*client)->id << "\n\n";
+            //std::cout << "\nWHAT TO SEND TO CLIENT " << (*client)->id << "\n\n";
 
             for (auto& object: objects) {
                 if (object.first != (*client)->id) {
                     (*client)->objects.push_back(object.second);
-                    std::cout <<"id: " <<  object.second.id << " posx: " << object.second.pos_x << " posy: " << object.second.pos_y << "\n";
+                  //  std::cout <<"id: " <<  object.second.id << " posx: " << object.second.pos_x << " posy: " << object.second.pos_y << "\n";
                 }
             }
 
@@ -128,9 +128,9 @@ struct Server {
             if (!data.empty()) {
                 if ((*client)->socket.send(&message_type, sizeof(message_type)) == sf::Socket::Done &&
                     (*client)->socket.send(data.data(), data.size()) == sf::Socket::Done) {
-                    puts("SENT DATA TO CLIENT!\n");
+                   // puts("SENT DATA TO CLIENT!\n");
                 } else {
-                    std::cerr << "Error sending data to client\n";
+                   // std::cerr << "Error sending data to client\n";
                 }
             }
             client++;

@@ -292,13 +292,6 @@ struct Map {
         }
     }
 
-    void update_player() {
-        if (main_player.hp > 0) {
-            main_player.timeSinceLastShot += 1;
-        }
-    }
-
-
     void main_player_move(sf::View &view, sf::RenderWindow &window, Client &client){
 
         if(main_player.id == 0){
