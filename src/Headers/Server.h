@@ -15,8 +15,8 @@ struct Server {
     bool active = false;
 
     bool set_listener() {
-        listener.setBlocking(false);
-        if (listener.listen(53000) != sf::Socket::Done) {
+        this->listener.setBlocking(false);
+        if (this->listener.listen(53000) != sf::Socket::Done) {
             std::cerr << "Error setting up listener\n";
             return false;
         }

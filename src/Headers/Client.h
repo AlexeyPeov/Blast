@@ -19,23 +19,26 @@ struct Client {
     std::vector<Object> objects;
     Object object;
     bool active = false;
-    bool connected = false;
 
     bool connect(std::string address, int port) {
         this->socket.setBlocking(false);
         if (socket.connect(address, port) != sf::Socket::Done) {
             std::cerr << "Error connecting to Server\n";
-            this->connected = false;
             this->active = false;
         }
         this->active = true;
-        this->connected = true;
         std::cout << "Client running..\n";
         return active;
     }
 
+    void disconnect(){
+        this->active = false;
+        this->socket.disconnect();
+        std::cout << "Client stopped.\n";
+    }
+
     bool receive_data() {
-        if (connected) {
+        if (active) {
             MessageType message_type;
             int buffer_length = max_players * sizeof(Object);
             char buffer[buffer_length];
@@ -79,7 +82,7 @@ struct Client {
     }
 
     bool send_data() {
-        if (connected) {
+        if (active) {
             auto data = object::serialize_object(this->object);
 
             std::cout << "\n\n";

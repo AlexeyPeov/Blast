@@ -94,7 +94,7 @@ public:
                     }
 
                     if (event.key.code == sf::Keyboard::Key::C) {
-                        if(!client.connected){
+                        if(!client.active){
                             client.connect("127.0.0.1", 53000);
                         }
                     }
@@ -106,7 +106,7 @@ public:
                         }
                         if (client.active) {
                             client.active = false;
-                            std::cout << "Stopping client..\n";
+                            client.disconnect();
                         }
                     }
                 }
