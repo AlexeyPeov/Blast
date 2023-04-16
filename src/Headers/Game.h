@@ -5,14 +5,18 @@
 #include "Levels.h"
 #include "RayCaster.h"
 #include "Server.h"
+#include "MainMenu.h"
 #include <chrono>
 #include <thread>
 
 class Game {
 private:
     struct Resolution {
-        uint x = 1600;
-        uint y = 800;
+//        uint x = 1600;
+//        uint y = 800;
+
+        uint x = 1280;
+        uint y = 720;
     };
 
 
@@ -29,6 +33,12 @@ private:
     Server server;
     Client client;
     bool gained_focus = false;
+    bool is_running = true;
+    GameState gameState = GameState::MAIN_MENU;
+
+    sf::Event game_event;
+
+    MainMenu mainMenu;
 
 public:
     Game() : desktop(sf::VideoMode::getDesktopMode()),
@@ -36,6 +46,7 @@ public:
              button(sf::Vector2f(100, 50)) {
 
         view = sf::View(sf::FloatRect(0, 0, resolution.x / 3, resolution.y / 3));
+        view.setCenter((sf::Vector2f)window.getPosition());
         window.setView(view);
 
         // Set the button color
@@ -53,16 +64,24 @@ public:
         map.init_main_player();
         map.init_walls(2);
         windowSize = window.getSize();
+
+        mainMenu = MainMenu(font);
+
     }
 
     void run() {
         auto frame_duration = std::chrono::milliseconds(1000 / 30);
-        while (window.isOpen()) {
+        while (is_running) {
+
+            if (mainMenu.menuState == MenuState::QUIT) {
+                is_running = false;
+            }
             auto frame_start = std::chrono::steady_clock::now();
             sf::Event event{};
+            mainMenu.setMainMenuItems(window);
             while (window.pollEvent(event)) {
                 if (event.type == sf::Event::Closed) {
-                    window.close();
+                    is_running = false;
                 }
                 if (event.type == sf::Event::GainedFocus) {
                     this->gained_focus = true;
@@ -70,9 +89,39 @@ public:
                     this->gained_focus = false;
                 }
 
+
+                if(gameState == GameState::MAIN_MENU){
+                    mainMenu.ipInput.handleEvent(event);
+                    mainMenu.portInput.handleEvent(event);
+                } else if (gameState == GameState::IN_GAME){
+                    //handle ingame events
+                }
+
+
+                if (mainMenu.menuState == MenuState::START) {
+                    gameState = GameState::IN_GAME;
+                    mainMenu.menuState = MenuState::CLOSED;
+                }
+
                 // Handle window fullscreen
                 if (event.type == sf::Event::KeyPressed) {
-                    if (event.key.code == sf::Keyboard::Key::Escape) {
+
+                    if (event.key.code == sf::Keyboard::Escape) {
+                        if (gameState == GameState::IN_GAME) {
+                            gameState = GameState::IN_GAME_PAUSE;
+                            mainMenu.menuState = MenuState::IN_PAUSE;
+                        } else if(gameState == GameState::IN_GAME_PAUSE) {
+                            gameState = GameState::IN_GAME;
+                        }
+                    }
+
+                    if (event.key.code == sf::Keyboard::G) {
+                        if (mainMenu.menuState != MenuState::CLOSED) {
+                            gameState = GameState::IN_GAME;
+                        }
+                    }
+
+                    if (event.key.code == sf::Keyboard::Key::Space) {
                         // Toggle fullscreen mode
                         fullscreen = !fullscreen;
                         if (fullscreen) {
@@ -89,13 +138,13 @@ public:
                     if (event.key.code == sf::Keyboard::Key::H) {
                         if(!server.active){
                             server.set_listener();
-                            client.connect("127.0.0.1", 53000);
+                            client.connect(mainMenu.ipInput.inputString, mainMenu.portInput.toInt());
                         }
                     }
 
                     if (event.key.code == sf::Keyboard::Key::C) {
                         if(!client.active){
-                            client.connect("127.0.0.1", 53000);
+                            client.connect(mainMenu.ipInput.inputString, mainMenu.portInput.toInt());
                         }
                     }
 
@@ -150,6 +199,8 @@ public:
                         float newY = map.main_player.sprite.getPosition().y * scaleY;
                         map.main_player.sprite.setScale(sc_x, sc_y);
                         map.main_player.sprite.setPosition(newX, newY);
+                        view.setCenter(map.main_player.sprite.getPosition());
+                        window.setView(view);
                     }
                     for (auto &missile: map.missiles) {
 
@@ -162,54 +213,62 @@ public:
 
                     windowSize = newWindowSize;
                 }
+                this->game_event = event;
             }
 
             window.clear();
 
-//            sf::Vector2f viewCenter = view.getCenter();
-//            sf::Vector2f viewSize = view.getSize();
-//            sf::FloatRect viewRect(viewCenter - viewSize / 2.f, viewSize);
-            if (server.active) {
-                server.send_data();
+            if (gameState == GameState::MAIN_MENU) {
+                mainMenu.draw(window);
+               // mainMenu.drawRectangle(window, font);
+            } else if (gameState == GameState::IN_GAME_PAUSE) {
+                mainMenu.draw_in_pause(window, gameState);
+               // mainMenu.drawRectangle(window, font);
+            } else if (gameState == GameState::IN_GAME) {
+                if (server.active) {
+                    server.send_data();
+                }
+                if (client.active){
+                    client.receive_data();
+                }
+                if (gained_focus) {
+                    map.main_player_move(view, window, client);
+                }
+
+
+
+                //update values
+                map.update_walls();
+                map.update_players(client);
+                map.update_missiles();
+                map.update_explosions();
+                map.update_player();
+
+                //collision
+                map.check_collision_walls_players();
+                map.check_collision_missiles_walls_players();
+                map.check_collision_player_players();
+
+
+
+
+                //drawing
+                map.draw_walls(window);
+                map.draw_floors(window);
+                map.draw_missiles(window);
+                map.draw_players(window);
+                map.draw_explosions(window);
+
+
+                if(client.active){
+                    client.send_data();
+                }
+                if(server.active){
+                    server.receive_data();
+                }
             }
-            if (client.active){
-               client.receive_data();
-            }
-            if (gained_focus) {
-                map.main_player_move(view, window, client);
-            }
-
-
-
-            //update values
-            map.update_walls();
-            map.update_players(client);
-            map.update_missiles();
-            map.update_explosions();
-            map.update_player();
-
-            //collision
-            map.check_collision_walls_players();
-            map.check_collision_missiles_walls_players();
-            map.check_collision_player_players();
-
-
-
-
-            //drawing
-            map.draw_walls(window);
-            map.draw_floors(window);
-            map.draw_missiles(window);
-            map.draw_players(window);
-            map.draw_explosions(window);
             window.display();
 
-            if(client.active){
-                client.send_data();
-            }
-            if(server.active){
-                server.receive_data();
-            }
             auto frame_end = std::chrono::steady_clock::now();
             auto elapsed_time = frame_end - frame_start;
             if (elapsed_time < frame_duration) {

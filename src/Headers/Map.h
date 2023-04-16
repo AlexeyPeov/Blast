@@ -132,16 +132,16 @@ struct Map {
     }
 
     void init_main_player() {
-        float movement_speed = 2;
+        float movement_speed = 4;
         int rotation_degree = 0;
-        int hp = 100;
+        int hp = 10000;
         main_player = Player(player_sprite, movement_speed, rotation_degree, hp, 0);
         config_sprite(main_player.sprite);
         main_player.sprite.setPosition(100, 100);
     }
 
     Player init_new_player(int id, float pos_x, float pos_y) const {
-        float movement_speed = 2;
+        float movement_speed = 4;
         int rotation_degree = 0;
         int hp = 100;
         Player player = Player(player_sprite, movement_speed, rotation_degree, hp, id);
@@ -155,13 +155,15 @@ struct Map {
             int movement_speed = 40;
             int rotation_degree = player.rotation_degree;
             Missile missile = Missile(missile_sprite, movement_speed, rotation_degree);
+            missile.player_who_shot = &player;
+
             config_sprite(missile.sprite);
 
             missile.sprite.setRotation(player.sprite.getRotation());
 
             float xToRad = missile.sprite.getRotation() * M_PI / 180;
-            float dx = 30 * sin(xToRad);
-            float dy = 30 * cos(xToRad);
+            float dx = 10 * sin(xToRad);
+            float dy = 10 * cos(xToRad);
             missile.sprite.setPosition(player.sprite.getPosition().x + dx, player.sprite.getPosition().y - dy);
 
             player.timeSinceLastShot = 0;
@@ -299,7 +301,35 @@ struct Map {
     }
 
 
-    void main_player_move(sf::View &view, sf::RenderWindow &window, Client &client){
+//    void main_player_move(sf::View &view, sf::RenderWindow &window, Client &client){
+//
+//        if(main_player.id == 0){
+//            main_player.id = client.id;
+//        }
+//
+//        if (main_player.hp > 0) {
+//            sf::Vector2i mouse_position = sf::Mouse::getPosition(window);
+//            sf::Vector2f worldMousePos = window.mapPixelToCoords(mouse_position);
+//
+//            view.setCenter(main_player.sprite.getPosition());
+//            window.setView(view);
+//            object::dont_move(client.object);
+//            object::dont_shoot(client.object);
+//            if (main_player.move(worldMousePos)) {
+//                object::move(client.object);
+//            }
+//            if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+//                if (init_missile(main_player)) {
+//                    object::shoot(client.object);
+//                }
+//            }
+//            client.object.pos_x = main_player.sprite.getPosition().x;
+//            client.object.pos_y = main_player.sprite.getPosition().y;
+//            client.object.rotation = main_player.sprite.getRotation();
+//        }
+//    }
+
+    void main_player_move(sf::View &view, sf::RenderWindow &window, Client &client, float deltaTime = 2.f){
 
         if(main_player.id == 0){
             main_player.id = client.id;
@@ -309,8 +339,29 @@ struct Map {
             sf::Vector2i mouse_position = sf::Mouse::getPosition(window);
             sf::Vector2f worldMousePos = window.mapPixelToCoords(mouse_position);
 
-            view.setCenter(main_player.sprite.getPosition());
-            window.setView(view);
+            // Calculate the distance between the player and the center of the view
+            float dx = main_player.sprite.getPosition().x - view.getCenter().x;
+            float dy = main_player.sprite.getPosition().y - view.getCenter().y;
+            float distance = std::sqrt(dx * dx + dy * dy);
+
+            // Update the view gradually if the mouse is on the full top/bottom/left/right of the screen
+            if (mouse_position.x <= 0) {
+                view.move(-3.0f * deltaTime, 0);
+                window.setView(view);
+            } else if (mouse_position.x >= window.getSize().x - 1) {
+                view.move(3.0f * deltaTime, 0);
+                window.setView(view);
+            } else if (mouse_position.y < 0) {
+                view.move(0, -3.0f * deltaTime);
+                window.setView(view);
+            } else if (mouse_position.y >= window.getSize().y - 1) {
+                view.move(0, 3.0f * deltaTime);
+                window.setView(view);
+            } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::F2)){
+                view.setCenter(main_player.sprite.getPosition());
+                window.setView(view);
+            }
+
             object::dont_move(client.object);
             object::dont_shoot(client.object);
             if (main_player.move(worldMousePos)) {
@@ -371,19 +422,22 @@ struct Map {
                     }
                 }
                 for (auto& [id, player] : players) {
-                    if (collision(player.sprite, missile.sprite, wall_can_move, missile_can_move)) {
-                        player.hp -= 50;
+                    if(missile.player_who_shot != &player){
+                        if (collision(player.sprite, missile.sprite, wall_can_move, missile_can_move)) {
+                            player.hp -= 50;
+                            missile.life = false;
+                            init_explosion(missile);
+                            break;
+                        }
+                    }
+                }
+                if(missile.player_who_shot != &main_player){
+                    if (collision(main_player.sprite, missile.sprite, wall_can_move, missile_can_move)) {
+                        main_player.hp -= 50;
                         missile.life = false;
                         init_explosion(missile);
                         break;
                     }
-                }
-
-                if (collision(main_player.sprite, missile.sprite, wall_can_move, missile_can_move)) {
-                    main_player.hp -= 50;
-                    missile.life = false;
-                    init_explosion(missile);
-                    break;
                 }
             }
         }

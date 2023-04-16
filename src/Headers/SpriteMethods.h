@@ -11,6 +11,14 @@ void config_sprite(sf::Sprite &sprite){
     sprite.setOrigin((float)sprite.getTexture()->getSize().x / 2.f, (float)sprite.getTexture()->getSize().y / 2.f);
 }
 
+void center_rect_shape(sf::RectangleShape &shape){
+    if (shape.getTexture()) {
+        shape.setOrigin((float)shape.getTexture()->getSize().x / 2.f, (float)shape.getTexture()->getSize().y / 2.f);
+    } else {
+        shape.setOrigin(shape.getSize().x / 2.f, shape.getSize().y / 2.f);
+    }
+}
+
 bool collision(sf::Sprite& a, sf::Sprite& b, bool a_can_move = true, bool b_can_move = true) {
     if (a.getGlobalBounds().intersects(b.getGlobalBounds())) {
 
