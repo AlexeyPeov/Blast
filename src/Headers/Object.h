@@ -15,6 +15,7 @@ struct Object {
     char nickname[nickname_length] = "aboba";
     int hp = 0;
     short team = 1;
+    int score = 0;
     float pos_x = 0;
     float pos_y = 0;
     float rotation = 0;

@@ -21,6 +21,19 @@ struct ViewSize {
 
 };
 
+enum Round{
+    HAS_NOT_STARTED,
+    START,
+    IN_PROGRESS,
+    OVER,
+};
+
+enum GameMode {
+    DEATH_MATCH,
+    TAKEOVER,
+    NONE,
+};
+
 class Game {
 
 private:
@@ -45,6 +58,8 @@ private:
     MultiplayerAction multiplayerAction = MultiplayerAction::NOTHING;
 
     MainMenu mainMenu;
+    Round round = Round::HAS_NOT_STARTED;
+    GameMode gameMode = GameMode::NONE;
 
 public:
     Game() : desktop(sf::VideoMode::getDesktopMode()),
@@ -77,5 +92,13 @@ public:
 
     void run();
 
+    void death_match();
+
+    void takeover();
+
+    void next_round();
+
     void handleMultiplayerAction();
+
+    void round_duration();
 };

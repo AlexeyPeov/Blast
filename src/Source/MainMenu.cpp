@@ -293,6 +293,18 @@ void MainMenu::drawMultiplayerLobby(sf::RenderWindow &window) {
                 team_1_text.erase(client->object.id);
             }
         }
+    }else if (mouseCursorCollidesWithMenuItem(mousePos, text4.getGlobalBounds())) {
+        //if(host){
+            text4.setFillColor(sf::Color::Yellow);
+            if (clicked()) {
+                //game.start();
+            }
+      //  }
+    } else if (mouseCursorCollidesWithMenuItem(mousePos, text5.getGlobalBounds())) {
+        text5.setFillColor(sf::Color::Yellow);
+        if (clicked()) {
+            menuState = MenuState::IS_HOST;
+        }
     }
 
 
@@ -429,7 +441,7 @@ void MainMenu::drawClientMenu(sf::RenderWindow &window) {
     ipInput.setPosition(viewCenter.x - 70 * 3, viewCenter.y - 50 * 3, 140 * 3, 20 * 3);
 
     setUpText(text2, 36, viewCenter.x - 35 * 3, viewCenter.y - 20 * 3, sf::Color::White);
-    portInput.setPosition(viewCenter.x - 70, viewCenter.y + 10, 140, 20);
+    portInput.setPosition(viewCenter.x - 70 * 3, viewCenter.y + 10 * 3, 140 * 3, 20 * 3);
 
     setUpText(text3, 36, viewCenter.x - 30 * 3, viewCenter.y + 40 * 3, sf::Color::White);
     setUpText(text4, 36, viewCenter.x - 20 * 3, viewCenter.y + 70 * 3, sf::Color::White);

@@ -71,6 +71,9 @@ void Map::init_walls(int level) {
             wall = {.sprite = unbreakable_wall_sprite, .hp = 99999999};
         } else if (arr[position] == WALL) {
             wall = {.sprite = wall_sprite, .hp = 5};
+        } else {
+            //add to vector of positions
+            available_dm_spawn_positions.emplace_back(x,y);
         }
 
         if (arr[position] != FLOOR) {
@@ -278,6 +281,7 @@ void Map::update_players(Client &client) {
         if (object.hp > 0) {
             bool is_shooting = object::is_shooting(object);
 
+            players[object.id].hp = object.hp;
             players[object.id].sprite.setRotation(object.rotation);
             players[object.id].sprite.setPosition(object.pos_x, object.pos_y);
             if (is_shooting) {
@@ -323,7 +327,9 @@ void Map::update_player() {
         }
     }*/
 
-void Map::main_player_move(sf::View &view, sf::RenderWindow &window, Client &client, float deltaTime) {
+
+
+void Map::main_player_move(sf::View &view, sf::RenderWindow &window, Client &client, bool gained_focus, bool not_in_game_pause, float deltaTime) {
 
     if (main_player.id == 0) {
         main_player.id = client.id;
@@ -332,30 +338,32 @@ void Map::main_player_move(sf::View &view, sf::RenderWindow &window, Client &cli
     sf::Vector2f worldMousePos = window.mapPixelToCoords(mouse_position);
 
     // Update the view gradually if the mouse is on the full top/bottom/left/right of the screen
-    if (mouse_position.x <= 5) {
-        view.move(-3.0f * deltaTime, 0);
-        window.setView(view);
-    } else if (mouse_position.x >= window.getSize().x - 5) {
-        view.move(3.0f * deltaTime, 0);
-        window.setView(view);
-    } else if (mouse_position.y <= 5) {
-        view.move(0, -3.0f * deltaTime);
-        window.setView(view);
-    } else if (mouse_position.y >= window.getSize().y - 5) {
-        view.move(0, 3.0f * deltaTime);
-        window.setView(view);
-    } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
-        view.setCenter(main_player.sprite.getPosition());
-        window.setView(view);
+    if(gained_focus && not_in_game_pause){
+        if (mouse_position.x <= 5) {
+            view.move(-3.0f * deltaTime, 0);
+            window.setView(view);
+        } else if (mouse_position.x >= window.getSize().x - 5) {
+            view.move(3.0f * deltaTime, 0);
+            window.setView(view);
+        } else if (mouse_position.y <= 5) {
+            view.move(0, -3.0f * deltaTime);
+            window.setView(view);
+        } else if (mouse_position.y >= window.getSize().y - 5) {
+            view.move(0, 3.0f * deltaTime);
+            window.setView(view);
+        } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
+            view.setCenter(main_player.sprite.getPosition());
+            window.setView(view);
+        }
     }
     if (main_player.hp > 0) {
+        if(gained_focus && not_in_game_pause) {
         main_player.move(worldMousePos);
-
-
-        if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
-            if (init_missile_as_main_player(main_player)) {
-                std::cout << "MAIN PLAYER INIT MISSILE\n";
-                object::shoot(client.object);
+            if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+                if (init_missile_as_main_player(main_player)) {
+                    std::cout << "MAIN PLAYER INIT MISSILE\n";
+                    object::shoot(client.object);
+                }
             }
         }
         client.object.pos_x = main_player.sprite.getPosition().x;
@@ -425,6 +433,11 @@ void Map::check_collision_missiles_walls_players() {
                     main_player.hp -= 50;
                     missile.life = false;
                     init_explosion(missile);
+
+                    if(main_player.hp <= 0){
+                        missile.player_who_shot->score++;
+                    }
+
                     break;
                 }
             }
@@ -457,4 +470,14 @@ void Map::draw_players(sf::RenderWindow &window) {
 
 void Map::draw_explosions(sf::RenderWindow &window) {
     for (const auto &explosion: explosions) window.draw(explosion.sprite);
+}
+
+sf::Vector2f Map::random_non_wall_position() {
+    auto now = std::chrono::system_clock::now();
+    auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
+    auto value = now_ms.time_since_epoch();
+    long duration = value.count();
+    srand(duration);
+    return available_dm_spawn_positions.at(rand() % available_dm_spawn_positions.size());
+
 }

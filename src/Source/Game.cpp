@@ -103,6 +103,7 @@ void Game::run() {
                 if (event.key.code == sf::Keyboard::Key::G) {
                     //if (gameState == GameState::MAIN_MENU) {
                     gameState = GameState::IN_GAME;
+                    gameMode = GameMode::DEATH_MATCH;
                     //}
                 }
 
@@ -195,10 +196,17 @@ void Game::run() {
             // mainMenu.drawRectangle(window, font);
         } else if (gameState == GameState::IN_GAME || gameState == GameState::IN_GAME_PAUSE) {
 
-            object::dont_shoot(client.object);
-            if (gained_focus && gameState != GameState::IN_GAME_PAUSE) {
-                map.main_player_move(view, window, client);
+            if(gameMode == GameMode::DEATH_MATCH){
+                death_match();
             }
+
+
+
+            object::dont_shoot(client.object);
+           // if (gained_focus && gameState != GameState::IN_GAME_PAUSE) {
+               // std::cout << gained_focus << " " << (gameState != GameState::IN_GAME_PAUSE) << "\n";
+                map.main_player_move(view, window, client, gained_focus, (gameState != GameState::IN_GAME_PAUSE));
+          //  }
 
             //update values
             map.update_walls();
@@ -276,3 +284,66 @@ void Game::handleMultiplayerAction() {
     }
     multiplayerAction = MultiplayerAction::NOTHING;
 }
+
+void Game::death_match(){
+
+    static bool has_round_started = false;
+
+    std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+    static std::chrono::system_clock::time_point end;
+
+    if(!has_round_started){
+        end = std::chrono::system_clock::now() + std::chrono::minutes(1);
+        has_round_started = true;
+    } else {
+
+        auto elapsed = std::chrono::duration_cast<std::chrono::minutes>(now - end);
+
+        if (elapsed.count() >= 1)
+        {
+            gameMode = GameMode::NONE;
+        } else {
+
+
+            if(map.main_player.hp <= 0){
+                map.main_player.hp = 100;
+                map.main_player.sprite.setPosition(map.random_non_wall_position());
+            }
+
+
+        }
+
+
+
+
+    }
+
+
+
+
+    // 10 minutes
+
+    // if player dies - respawns with full health on a random non - wall square, in 2 seconds
+
+    // if player.hp < 0
+    //      player.hp = 100
+    //      player.position = random
+
+
+
+    // each player has a score - how many times has he killed.
+    //  if missile.died
+    //      if hit player
+    //          if player.hp < 0
+    //              missile.player.score ++
+    //      handled at void check_collision_missiles_walls_players();
+
+
+
+    // if 10 minutes over - show leaderboard.
+    // return
+}
+
+void Game::takeover(){}
+
+void Game::next_round(){}

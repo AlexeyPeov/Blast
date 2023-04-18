@@ -38,6 +38,7 @@ struct Map {
     sf::Sprite explosion_sprite;
     sf::Sprite missile_sprite;
 
+    std::vector<sf::Vector2f> available_dm_spawn_positions;
     std::vector<Wall> walls;
     std::vector<sf::Sprite> floors;
     std::unordered_map<int, Player> players;
@@ -71,7 +72,7 @@ struct Map {
 
     void update_player();
 
-    void main_player_move(sf::View &view, sf::RenderWindow &window, Client &client, float deltaTime = 2.0);
+    void main_player_move(sf::View &view, sf::RenderWindow &window, Client &client, bool gained_focus, bool not_in_game_pause, float deltaTime = 2.0);
 
     void check_collision_walls_players();
 
@@ -89,5 +90,5 @@ struct Map {
 
     void draw_explosions(sf::RenderWindow &window);
 
-
+    sf::Vector2f random_non_wall_position();
 };
