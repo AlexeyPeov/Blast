@@ -5,8 +5,7 @@
 #include <valarray>
 #include "../Headers/Entity.h"
 
-bool Entity::move(sf::Vector2f &mouse_position) {
-    bool moved = false;
+void Entity::move(sf::Vector2f &mouse_position) {
 
     float angle =
             (atan2(mouse_position.y - this->sprite.getPosition().y,
@@ -18,19 +17,15 @@ bool Entity::move(sf::Vector2f &mouse_position) {
     sf::Vector2f movement = {0,0};
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
         movement.y -= 1;
-        moved = true;
     }
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
         movement.y += 1;
-        moved = true;
     }
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
         movement.x -= 1;
-        moved = true;
     }
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
         movement.x += 1;
-        moved = true;
     }
 
     // Normalize movement vector
@@ -39,7 +34,6 @@ bool Entity::move(sf::Vector2f &mouse_position) {
         movement /= length;
         this->sprite.move(movement.x * this->movement_speed,movement.y * this->movement_speed );
     }
-    return moved;
 }
 
 

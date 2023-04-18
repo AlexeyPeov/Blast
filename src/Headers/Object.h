@@ -2,80 +2,41 @@
 
 #include <vector>
 #include <cstring>
+#include <string>
+#include <iostream>
 
-#define MOVE 1
-#define SHOOT 2
+#define SHOOT 1
+#define DONT_SHOOT 0
+
+const short nickname_length = 15;
 
 struct Object {
-    int id;
-    float pos_x;
-    float pos_y;
-    float rotation;
-    short action;
+    int id = 0;
+    char nickname[nickname_length] = "aboba";
+    int hp = 0;
+    short team = 1;
+    float pos_x = 0;
+    float pos_y = 0;
+    float rotation = 0;
+    short action = 0;
 };
 
 
-namespace object{
+namespace object {
 
-    void move(Object &object){
-        object.action |= MOVE;
-    }
+    void shoot(Object &object);
 
-    void shoot(Object &object){
-        object.action |= SHOOT;
-    }
+    void dont_shoot(Object &object);
 
-    void dont_move(Object &object){
-        object.action &= ~MOVE;
-    }
+    bool is_shooting(Object &object);
 
-    void dont_shoot(Object &object){
-        object.action &= ~SHOOT;
-    }
+    std::vector<char> serialize_object(const Object& object);
 
-    bool is_moving(Object &object){
-        if (object.action & MOVE) {
-            return true;
-        }
-        return false;
-    }
+    std::vector<char> serialize_objects(const std::vector<Object>& objects);
 
-    bool is_shooting(Object &object){
-        if (object.action & SHOOT) {
-            return true;
-        }
-        return false;
-    }
+    void deserialize_objects(const std::vector<char>& data, std::vector<Object>& objects);
 
-    std::vector<char> serialize_object(const Object& object) {
-        std::vector<char> data;
-        data.resize(sizeof(Object));
-        memcpy(data.data(), &object, sizeof(Object));
-        return data;
-    }
+    void deserialize_object(const std::vector<char>& data, Object & object);
 
-    std::vector<char> serialize_objects(const std::vector<Object>& objects) {
-        std::vector<char> data;
-        data.resize(objects.size() * sizeof(Object));
-        memcpy(data.data(), objects.data(), data.size());
-        return data;
-    }
-
-    void deserialize_objects(const std::vector<char>& data, std::vector<Object>& objects) {
-        if (data.size() % sizeof(Object) != 0) {
-            std::cerr << "data size is not a multiple of Object size, not doing anything..\n";
-            return;
-        }
-        size_t object_count = data.size() / sizeof(Object);
-        objects.resize(object_count);
-        memcpy(objects.data(), data.data(), data.size());
-    }
-
-    void deserialize_object(const std::vector<char>& data, Object & object) {
-        if (data.size() < sizeof(Object)) {
-            std::cerr << "Error: not enough data to deserialize Object\n";
-            return;
-        }
-        memcpy(&object, data.data(), sizeof(Object));
-    }
+    void copy_string_to_nickname(std::string &string, Object &object);
 }

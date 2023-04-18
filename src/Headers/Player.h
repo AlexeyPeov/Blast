@@ -6,7 +6,7 @@
 struct Player : Entity {
     int id = 0;
     int hp = 0;
-    int shootDelay = 5;
+    int shootDelay = 60;
     int timeSinceLastShot = 0;
 
     Player(){}

@@ -7,44 +7,12 @@
 
 #include <SFML/Graphics.hpp>
 
-void config_sprite(sf::Sprite &sprite){
-    sprite.setOrigin((float)sprite.getTexture()->getSize().x / 2.f, (float)sprite.getTexture()->getSize().y / 2.f);
-}
+void config_sprite(sf::Sprite &sprite);
 
-void center_rect_shape(sf::RectangleShape &shape){
-    if (shape.getTexture()) {
-        shape.setOrigin((float)shape.getTexture()->getSize().x / 2.f, (float)shape.getTexture()->getSize().y / 2.f);
-    } else {
-        shape.setOrigin(shape.getSize().x / 2.f, shape.getSize().y / 2.f);
-    }
-}
+void center_rect_shape(sf::RectangleShape &shape);
 
-bool collision(sf::Sprite& a, sf::Sprite& b, bool a_can_move = true, bool b_can_move = true) {
-    if (a.getGlobalBounds().intersects(b.getGlobalBounds())) {
+void center_circle_shape(sf::CircleShape &shape);
 
-        sf::FloatRect overlap;
-        a.getGlobalBounds().intersects(b.getGlobalBounds(), overlap);
+bool collision(sf::Sprite& a, sf::Sprite& b, bool a_can_move = true, bool b_can_move = true);
 
-        sf::Vector2f push;
-        if (overlap.width < overlap.height) {
-            push.x = overlap.width * (a.getPosition().x < b.getPosition().x ? -1 : 1);
-        } else {
-            push.y = overlap.height * (a.getPosition().y < b.getPosition().y ? -1 : 1);
-        }
-
-        // Push back the sprites
-        if (a_can_move && b_can_move) {
-            a.move(push / 2.0f);
-            b.move(-push / 2.0f);
-        } else if (a_can_move) {
-            a.move(push);
-        } else if (b_can_move) {
-            b.move(-push);
-        }
-
-        return true;
-    }
-    return false;
-}
-
-#endif //BLAST_SPRITEMETHODS_H
+#endif
