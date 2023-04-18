@@ -293,13 +293,13 @@ void Game::death_match(){
     static std::chrono::system_clock::time_point end;
 
     if(!has_round_started){
-        end = std::chrono::system_clock::now() + std::chrono::minutes(1);
+        end = std::chrono::system_clock::now() + std::chrono::minutes(5);
         has_round_started = true;
     } else {
 
         auto elapsed = std::chrono::duration_cast<std::chrono::minutes>(now - end);
 
-        if (elapsed.count() >= 1)
+        if (elapsed.count() >= 5)
         {
             gameMode = GameMode::NONE;
         } else {
