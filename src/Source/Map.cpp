@@ -8,34 +8,34 @@ std::string current_dir() {
 void Map::init_map_textures() {
 
     // release
-//        this->player_texture.loadFromFile(current_dir() + "/textures/personStationary.png");
-//
-//        this->wall_texture_unbreakable.loadFromFile(current_dir() + "/textures/unbreakableBorder.png");
-//        this->floor_texture.loadFromFile(current_dir() + "/textures/floor.png");
-//        this->wall_texture_5.loadFromFile(current_dir() + "/textures/border5.png");
-//        this->wall_texture_4.loadFromFile(current_dir() + "/textures/border4.png");
-//        this->wall_texture_3.loadFromFile(current_dir() + "/textures/border3.png");
-//        this->wall_texture_2.loadFromFile(current_dir() + "/textures/border2.png");
-//        this->wall_texture_1.loadFromFile(current_dir() + "/textures/border1.png");
-//
-//        this->missile_texture.loadFromFile(current_dir() + "/textures/missle.png");
-//
-//        this->explosion_texture.loadFromFile(current_dir() + "/textures/explosion.png");
+        this->player_texture.loadFromFile(current_dir() + "/textures/personStationary.png");
+
+        this->wall_texture_unbreakable.loadFromFile(current_dir() + "/textures/unbreakableBorder.png");
+        this->floor_texture.loadFromFile(current_dir() + "/textures/floor.png");
+        this->wall_texture_5.loadFromFile(current_dir() + "/textures/border5.png");
+        this->wall_texture_4.loadFromFile(current_dir() + "/textures/border4.png");
+        this->wall_texture_3.loadFromFile(current_dir() + "/textures/border3.png");
+        this->wall_texture_2.loadFromFile(current_dir() + "/textures/border2.png");
+        this->wall_texture_1.loadFromFile(current_dir() + "/textures/border1.png");
+
+        this->missile_texture.loadFromFile(current_dir() + "/textures/missle.png");
+
+        this->explosion_texture.loadFromFile(current_dir() + "/textures/explosion.png");
 
     //clion debug
-    this->player_texture.loadFromFile(current_dir() + "/../textures/personStationary.png");
-
-    this->wall_texture_unbreakable.loadFromFile(current_dir() + "/../textures/unbreakableBorder.png");
-    this->floor_texture.loadFromFile(current_dir() + "/../textures/floor.png");
-    this->wall_texture_5.loadFromFile(current_dir() + "/../textures/border5.png");
-    this->wall_texture_4.loadFromFile(current_dir() + "/../textures/border4.png");
-    this->wall_texture_3.loadFromFile(current_dir() + "/../textures/border3.png");
-    this->wall_texture_2.loadFromFile(current_dir() + "/../textures/border2.png");
-    this->wall_texture_1.loadFromFile(current_dir() + "/../textures/border1.png");
-
-    this->missile_texture.loadFromFile(current_dir() + "/../textures/missle.png");
-
-    this->explosion_texture.loadFromFile(current_dir() + "/../textures/explosion.png");
+//    this->player_texture.loadFromFile(current_dir() + "/../textures/personStationary.png");
+//
+//    this->wall_texture_unbreakable.loadFromFile(current_dir() + "/../textures/unbreakableBorder.png");
+//    this->floor_texture.loadFromFile(current_dir() + "/../textures/floor.png");
+//    this->wall_texture_5.loadFromFile(current_dir() + "/../textures/border5.png");
+//    this->wall_texture_4.loadFromFile(current_dir() + "/../textures/border4.png");
+//    this->wall_texture_3.loadFromFile(current_dir() + "/../textures/border3.png");
+//    this->wall_texture_2.loadFromFile(current_dir() + "/../textures/border2.png");
+//    this->wall_texture_1.loadFromFile(current_dir() + "/../textures/border1.png");
+//
+//    this->missile_texture.loadFromFile(current_dir() + "/../textures/missle.png");
+//
+//    this->explosion_texture.loadFromFile(current_dir() + "/../textures/explosion.png");
 
 
     this->player_sprite = sf::Sprite(player_texture);
