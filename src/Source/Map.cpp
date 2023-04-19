@@ -37,18 +37,24 @@ void Map::init_map_textures() {
 
 void Map::init_walls(int level) {
 
+    walls.clear();
+    floors.clear();
+    available_dm_spawn_positions.clear();
+
+
     int *arr;
+    int arr_width = 0;
+    int arr_height = 0;
+    if (level == 1) { arr = &level_1[0]; arr_width = level_1_width; arr_height = level_1_height; }
+    if (level == 2) { arr = &level_2[0]; arr_width = level_2_width; arr_height = level_2_height; }
+    if (level == 3) { arr = &dust_3[0]; arr_width = dust_3_width; arr_height = dust_3_height; }
 
-    if (level == 1) arr = &level_1[0];
-    if (level == 2) arr = &level_2[0];
-    if (level == 3) arr = &level_3[0];
-
-    for (int position = 0; position < 15*15; position++) {
+    for (int position = 0; position < (arr_width * arr_height); position++) {
 
         Wall wall;
 
-        int x = ((position % 15) * 40) + 20;
-        int y = ((position / 15) * 40) + 20;
+        int x = ((position % arr_width) * 40) + 20;
+        int y = ((position / arr_width) * 40) + 20;
 
 
         if (arr[position] == UNBREAKABLE_WALL) {
@@ -60,11 +66,11 @@ void Map::init_walls(int level) {
             available_dm_spawn_positions.emplace_back(x, y);
         }
 
-        if (arr[position] != FLOOR) {
+        if (arr[position] != FLOOR && arr[position] != IRRELEVANT_WALL) {
             wall.sprite.setPosition(x, y);
             config_sprite(wall.sprite);
             walls.push_back(wall);
-        } else {
+        } else if (arr[position] != IRRELEVANT_WALL) {
             floor_sprite.setPosition(x, y);
             floor_sprite.setOrigin(floor_sprite.getTexture()->getSize().x / 2,
                                    floor_sprite.getTexture()->getSize().y / 2);
@@ -313,8 +319,7 @@ void Map::update_player() {
 
 
 
-void Map::main_player_move(sf::View &view, sf::RenderWindow &window, Client &client, bool gained_focus,
-                           bool not_in_game_pause, float deltaTime) {
+void Map::main_player_move(sf::View &view, sf::RenderWindow &window, Client &client, bool gained_focus, float deltaTime) {
 
     if (main_player.id == 0) {
         main_player.id = client.id;
@@ -323,17 +328,17 @@ void Map::main_player_move(sf::View &view, sf::RenderWindow &window, Client &cli
     sf::Vector2f worldMousePos = window.mapPixelToCoords(mouse_position);
 
     // Update the view gradually if the mouse is on the full top/bottom/left/right of the screen
-    if (gained_focus && not_in_game_pause) {
+    if (gained_focus && *gameState == GameState::IN_GAME) {
         if (mouse_position.x <= 5) {
             view.move(-3.0f * deltaTime, 0);
             window.setView(view);
-        } else if (mouse_position.x >= window.getSize().x - 5) {
+        } else if (mouse_position.x >= (window.getSize().x - 5)) {
             view.move(3.0f * deltaTime, 0);
             window.setView(view);
         } else if (mouse_position.y <= 5) {
             view.move(0, -3.0f * deltaTime);
             window.setView(view);
-        } else if (mouse_position.y >= window.getSize().y - 5) {
+        } else if (mouse_position.y >= (window.getSize().y - 5)) {
             view.move(0, 3.0f * deltaTime);
             window.setView(view);
         } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
@@ -342,7 +347,7 @@ void Map::main_player_move(sf::View &view, sf::RenderWindow &window, Client &cli
         }
     }
     if (main_player.hp > 0) {
-        if (gained_focus && not_in_game_pause) {
+        if (gained_focus && *gameState == GameState::IN_GAME) {
             main_player.move(worldMousePos);
             if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
                 if (init_missile_as_main_player(main_player)) {
@@ -356,6 +361,8 @@ void Map::main_player_move(sf::View &view, sf::RenderWindow &window, Client &cli
         client.object.rotation = main_player.sprite.getRotation();
     }
     client.object.hp = main_player.hp;
+    client.object.kills = main_player.kills;
+    client.object.deaths = main_player.deaths;
 }
 
 
@@ -408,6 +415,12 @@ void Map::check_collision_missiles_walls_players() {
                     if (collision(player.sprite, missile.sprite, wall_can_move, missile_can_move)) {
                         player.hp -= 50;
                         missile.life = false;
+
+                        if (player.hp <= 0) {
+                            if(missile.player_who_shot == &main_player)
+                                main_player.kills++;
+                        }
+
                         init_explosion(missile);
                         break;
                     }
@@ -417,11 +430,12 @@ void Map::check_collision_missiles_walls_players() {
                 if (collision(main_player.sprite, missile.sprite, wall_can_move, missile_can_move)) {
                     main_player.hp -= 50;
                     missile.life = false;
-                    init_explosion(missile);
 
                     if (main_player.hp <= 0) {
-                        missile.player_who_shot->score++;
+                        main_player.deaths++;
                     }
+                    init_explosion(missile);
+
 
                     break;
                 }

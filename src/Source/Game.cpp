@@ -32,6 +32,7 @@ void Game::run() {
                 window.create(sf::VideoMode(1280, 720), "Blast",
                               sf::Style::Titlebar | sf::Style::Close);
             }
+            window.setVerticalSyncEnabled(true);
 //                if(gameState == GameState::MAIN_MENU){
 //                    view = sf::View(sf::FloatRect(0, 0, window.getSize().x, window.getSize().y));
 //                } else {
@@ -75,22 +76,22 @@ void Game::run() {
             }
 
 
-            if (mainMenu.menuState == MenuState::START) {
-                gameState = GameState::IN_GAME;
-                mainMenu.menuState = MenuState::IN_GAME;
-            }
+//            if (mainMenu.menuState == MenuState::START) {
+//                gameState = GameState::IN_GAME;
+//              //  mainMenu.menuState = MenuState::IN_GAME;
+//            }
 
             // Handle window fullscreen
             if (event.type == sf::Event::KeyPressed) {
 
-                if (event.key.code == sf::Keyboard::Escape) {
-                    if (gameState == GameState::IN_GAME) {
-                        gameState = GameState::IN_GAME_PAUSE;
-                        mainMenu.menuState = MenuState::IN_GAME_PAUSE;
-                    } else if (gameState == GameState::IN_GAME_PAUSE) {
-                        gameState = GameState::IN_GAME;
-                    }
-                }
+//                if (event.key.code == sf::Keyboard::Escape) {
+//                    if (gameState == GameState::IN_GAME) {
+//                        gameState = GameState::IN_GAME_PAUSE;
+//                      //  mainMenu.menuState = MenuState::IN_GAME_PAUSE;
+//                    } else if (gameState == GameState::IN_GAME_PAUSE) {
+//                        gameState = GameState::IN_GAME;
+//                    }
+//                }
 
                 /*if (event.key.code == sf::Keyboard::Key::H) {
                     if(!server.active){
@@ -193,15 +194,14 @@ void Game::run() {
         if (gameState == GameState::MAIN_MENU) {
             mainMenu.draw(window);
             map.main_player.hp = 100;
-        } else if (gameState == GameState::IN_GAME || gameState == GameState::IN_GAME_PAUSE) {
+        } else  {
 
             if (gameMode == GameMode::DEATH_MATCH) {
                 death_match();
             }
 
-
             object::dont_shoot(client.object);
-            map.main_player_move(view, window, client, gained_focus, (gameState != GameState::IN_GAME_PAUSE));
+            map.main_player_move(view, window, client, gained_focus);
 
 
             //update values
@@ -225,10 +225,10 @@ void Game::run() {
             map.draw_missiles(window);
             map.draw_players(window);
             map.draw_explosions(window);
-
+            handleKeyBindings();
 
             if (gameState == GameState::IN_GAME_PAUSE) {
-                mainMenu.draw_in_pause(window, gameState);
+               // mainMenu.draw_in_pause(window, gameState);
             }
 
         }
@@ -238,6 +238,60 @@ void Game::run() {
         if (server.active) {
             server.receive_data();
         }
+/*
+        // Define the fragment shader source code
+        const char* fragmentShaderCode = R"(
+    uniform vec2 center;
+    uniform float radius;
+
+    void main() {
+        // Calculate the distance from the current pixel to the center of the circle
+        float distance = length(gl_FragCoord.xy - center);
+
+        // Calculate the color based on the distance
+        float alpha = smoothstep(radius, 0.0, distance);
+        gl_FragColor = vec4(0.0, 0.0, 0.0, alpha);
+    }
+)";
+
+    // Load the shader from the source code
+            sf::Shader shader;
+            if (!shader.loadFromMemory(fragmentShaderCode, sf::Shader::Fragment)) {
+                // Handle error
+            }
+
+        sf::RenderTexture renderTexture;
+        renderTexture.create(window.getSize().x, window.getSize().y);
+
+// Clear the render texture with a transparent color
+        renderTexture.clear(sf::Color::Transparent);
+
+// Draw the visible area onto the render texture
+        RayCaster::castRays(renderTexture, map.main_player.sprite.getPosition(), map.walls);
+
+// Display the contents of the render texture
+        //renderTexture.display();
+
+// Create a new sprite using the render texture as its texture
+        sf::Sprite visibleAreaSprite(renderTexture.getTexture());
+        //visibleAreaSprite.setPosition(map.main_player.sprite.getPosition());
+        visibleAreaSprite.setScale(1.f, -1.f);
+        visibleAreaSprite.setPosition(0.f, renderTexture.getSize().y);
+// Apply the shader to the sprite
+        window.draw(visibleAreaSprite);//, &shader);
+
+//    // Create a new circle shape with the desired radius
+//            sf::CircleShape shape(50);
+//
+//    // Set the position of the shape
+//            shape.setPosition(150, 150);
+//
+//    // Set the shader parameters
+//            shader.setUniform("center", shape.getPosition() + sf::Vector2f(shape.getRadius(), shape.getRadius()));
+//            shader.setUniform("radius", shape.getRadius());
+//
+//    // Draw the shape using the shader
+//            window.draw(shape, &shader);*/
 
         window.display();
 
@@ -345,4 +399,209 @@ void Game::handleKeyBindings() {
     // if main menu
 
     // if in game
+    //tab
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Tab)) {
+        draw_score_menu();
+    } else {
+
+        // esc (pause)
+        if(KeyBoard::keyClicked(sf::Keyboard::Escape)){
+            if(gameState == GameState::IN_GAME || gameState == GameState::IN_GAME_OPTIONS){
+                gameState = GameState::IN_GAME_PAUSE;
+            }
+            else if (gameState == GameState::IN_GAME_PAUSE){
+                gameState = GameState::IN_GAME;
+            }
+        }
+
+        if(gameState == GameState::IN_GAME_PAUSE){
+
+            draw_in_game_pause_menu();
+
+        } else if (gameState == GameState::IN_GAME_OPTIONS){
+
+            draw_in_game_options_menu();
+
+        }
+
+
+    }
+}
+
+void Game::draw_score_menu(){
+    sf::Vector2f viewCenter = window.getView().getCenter();
+
+    std::map<int, sf::Text> team_1_text;
+    std::map<int, sf::Text> team_2_text;
+
+    float team_1_text_offset = -40;
+    float team_2_text_offset = -40;
+
+    if (client.object.team == 1) {
+        sf::Text text(std::string(client.object.nickname) + " " + std::to_string(client.object.kills) + " " + std::to_string(client.object.deaths) + " ", font);
+        text.setScale(0.3, 0.3);
+        MainMenu::setUpText(text, 24, viewCenter.x - 120 + 50, viewCenter.y + team_1_text_offset, sf::Color::White);
+        team_1_text_offset += 20;
+        team_1_text[client.object.id] = text;
+    } else {
+        sf::Text text(std::string(client.object.nickname) + " " + std::to_string(client.object.kills) + " " + std::to_string(client.object.deaths) + " ", font);
+        text.setScale(0.3, 0.3);
+        MainMenu::setUpText(text, 24, viewCenter.x - 15 + 50, viewCenter.y + team_2_text_offset, sf::Color::White);
+        team_2_text_offset += 20;
+        team_2_text[client.object.id] = text;
+    }
+
+    for (auto &player: client.objects) {
+        if (player.team == 1) {
+            sf::Text text(std::string(player.nickname) + " " + std::to_string(player.kills) + " " + std::to_string(player.deaths) + " ", font);
+            MainMenu::setUpText(text, 24, viewCenter.x - 120+ 50, viewCenter.y + team_1_text_offset, sf::Color::White);
+            text.setScale(0.3, 0.3);
+            team_1_text_offset += 20;
+            team_1_text[player.id] = text;
+        } else {
+            sf::Text text(std::string(player.nickname) + " " + std::to_string(player.kills) + " " + std::to_string(player.deaths) + " ", font);
+            MainMenu::setUpText(text, 24, viewCenter.x - 15+ 50, viewCenter.y + team_2_text_offset, sf::Color::White);
+            text.setScale(0.3, 0.3);
+            team_2_text_offset += 20;
+            team_1_text[player.id] = text;
+        }
+    }
+
+    sf::Text text1 = sf::Text("Amogusi", font);
+    sf::Text text2 = sf::Text("Abobusi", font);
+
+    text1.setScale(0.3, 0.3);
+    text2.setScale(0.3, 0.3);
+
+    MainMenu::setUpText(text1, 36, viewCenter.x - 120 + 50, viewCenter.y - 60, sf::Color::White);
+    MainMenu::setUpText(text2, 36, viewCenter.x - 15 + 50, viewCenter.y - 60, sf::Color::White);
+
+    sf::RectangleShape score_rect = sf::RectangleShape(sf::Vector2f(300, 200));
+    score_rect.setFillColor(sf::Color(128, 128, 128, 50));
+    score_rect.setPosition(viewCenter);
+    center_rect_shape(score_rect);
+
+    window.draw(score_rect);
+    window.draw(text1);
+    window.draw(text2);
+
+    for (auto &team1: team_1_text) {
+        window.draw(team1.second);
+    }
+    for (auto &team2: team_2_text) {
+        window.draw(team2.second);
+    }
+}
+
+void Game::draw_in_game_pause_menu() {
+
+    sf::Vector2i mp = sf::Mouse::getPosition(window);
+    sf::Vector2f mousePos = window.mapPixelToCoords(mp);
+
+    sf::Vector2f viewCenter = window.getView().getCenter();
+
+    sf::Text text1_in_game = sf::Text("Continue", font);
+    sf::Text text2_in_game = sf::Text("Options", font);
+    sf::Text text3_in_game = sf::Text("Exit to main menu", font);
+
+    text1_in_game.setScale(0.3, 0.3);
+    text2_in_game.setScale(0.3, 0.3);
+    text3_in_game.setScale(0.3, 0.3);
+
+    sf::RectangleShape menu_rect_in_game = sf::RectangleShape(sf::Vector2f(150, 200));
+
+    menu_rect_in_game.setFillColor(sf::Color(128, 128, 128, 120));
+    menu_rect_in_game.setPosition(viewCenter);
+    center_rect_shape(menu_rect_in_game);
+
+    MainMenu::setUpText(text1_in_game, 36, viewCenter.x - 27, viewCenter.y - 40, sf::Color::White);
+    MainMenu::setUpText(text2_in_game, 36, viewCenter.x - 25, viewCenter.y - 20, sf::Color::White);
+    MainMenu::setUpText(text3_in_game, 36, viewCenter.x - 50, viewCenter.y, sf::Color::White);
+
+    if (Mouse::cursorCollidesWithItem(mousePos, text1_in_game.getGlobalBounds())) {
+        text1_in_game.setFillColor(sf::Color::Yellow);
+        if (Mouse::clicked()) {
+            gameState = GameState::IN_GAME;
+        }
+    } else if (Mouse::cursorCollidesWithItem(mousePos, text2_in_game.getGlobalBounds())) {
+        text2_in_game.setFillColor(sf::Color::Yellow);
+        if (Mouse::clicked()) {
+            gameState = GameState::IN_GAME_OPTIONS;
+        }
+    } else if (Mouse::cursorCollidesWithItem(mousePos, text3_in_game.getGlobalBounds())) {
+        text3_in_game.setFillColor(sf::Color::Yellow);
+        if (Mouse::clicked()) {
+            multiplayerAction = MultiplayerAction::STOP_SERVER_AND_CLIENT;
+            gameState = GameState::MAIN_MENU;
+            mainMenu.menuState = MenuState::MAIN_MENU;
+        }
+    }
+    window.draw(menu_rect_in_game);
+    window.draw(text1_in_game);
+    window.draw(text2_in_game);
+    window.draw(text3_in_game);
+}
+
+void Game::draw_in_game_options_menu() {
+    //   setMainMenuItems(window);
+    sf::Vector2i mp = sf::Mouse::getPosition(window);
+    sf::Vector2f mousePos = window.mapPixelToCoords(mp);
+
+    sf::Vector2f viewCenter = window.getView().getCenter();
+
+    sf::Text text1_in_game = sf::Text("Screen Resolution:", font);
+    sf::Text text2_in_game = sf::Text("Fullscreen", font);
+    sf::Text text3_in_game = sf::Text("1600x800", font);
+    sf::Text text4_in_game = sf::Text("1280x720", font);
+    sf::Text text5_in_game = sf::Text("Back", font);
+
+    text1_in_game.setScale(0.3, 0.3);
+    text2_in_game.setScale(0.3, 0.3);
+    text3_in_game.setScale(0.3, 0.3);
+    text4_in_game.setScale(0.3, 0.3);
+    text5_in_game.setScale(0.3, 0.3);
+
+
+    sf::RectangleShape menu_rect_in_game = sf::RectangleShape(sf::Vector2f(150, 200));
+    menu_rect_in_game.setFillColor(sf::Color(128, 128, 128, 120));
+    menu_rect_in_game.setPosition(viewCenter);
+    center_rect_shape(menu_rect_in_game);
+
+    MainMenu::setUpText(text1_in_game, 12 * 3, viewCenter.x - 50, viewCenter.y - 60, sf::Color::White);
+    MainMenu::setUpText(text2_in_game, 12 * 3, viewCenter.x - 30, viewCenter.y - 40, sf::Color::White);
+    MainMenu::setUpText(text3_in_game, 12 * 3, viewCenter.x - 30, viewCenter.y - 20, sf::Color::White);
+    MainMenu::setUpText(text4_in_game, 12 * 3, viewCenter.x - 30, viewCenter.y, sf::Color::White);
+    MainMenu::setUpText(text5_in_game, 12 * 3, viewCenter.x - 20, viewCenter.y + 20, sf::Color::White);
+
+
+    if (Mouse::cursorCollidesWithItem(mousePos, text2_in_game.getGlobalBounds())) {
+        text2_in_game.setFillColor(sf::Color::Yellow);
+        if (Mouse::clicked()) {
+            //change to fullscreen
+            videoMode = VideoMode::FULLSCREEN;
+        }
+    } else if (Mouse::cursorCollidesWithItem(mousePos, text3_in_game.getGlobalBounds())) {
+        text3_in_game.setFillColor(sf::Color::Yellow);
+        if (Mouse::clicked()) {
+            //change 1600x800
+            videoMode = VideoMode::_1600x800;
+        }
+    } else if (Mouse::cursorCollidesWithItem(mousePos, text4_in_game.getGlobalBounds())) {
+        text4_in_game.setFillColor(sf::Color::Yellow);
+        if (Mouse::clicked()) {
+            //change to 1280x720
+            videoMode = VideoMode::_1280x720;
+        }
+    } else if (Mouse::cursorCollidesWithItem(mousePos, text5_in_game.getGlobalBounds())) {
+        text5_in_game.setFillColor(sf::Color::Yellow);
+        if (Mouse::clicked()) {
+            gameState = GameState::IN_GAME_PAUSE;
+        }
+    }
+    window.draw(menu_rect_in_game);
+    window.draw(text1_in_game);
+    window.draw(text2_in_game);
+    window.draw(text3_in_game);
+    window.draw(text4_in_game);
+    window.draw(text5_in_game);
 }

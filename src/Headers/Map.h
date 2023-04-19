@@ -8,7 +8,9 @@
 #include "SpriteMethods.h"
 #include "Animation.h"
 #include "Missile.h"
+#include "Enums.h"
 
+#define IRRELEVANT_WALL 3
 #define UNBREAKABLE_WALL 2
 #define WALL 1
 #define FLOOR 0
@@ -38,6 +40,8 @@ struct Map {
     sf::Sprite explosion_sprite;
     sf::Sprite missile_sprite;
 
+
+
     std::vector<sf::Vector2f> available_dm_spawn_positions;
     std::vector<Wall> walls;
     std::vector<sf::Sprite> floors;
@@ -45,6 +49,8 @@ struct Map {
     std::vector<Animation> explosions;
     std::vector<Missile> missiles;
     Player main_player;
+
+    GameState *gameState = nullptr;
 
     void init_map_textures();
 
@@ -72,7 +78,7 @@ struct Map {
 
     void update_player();
 
-    void main_player_move(sf::View &view, sf::RenderWindow &window, Client &client, bool gained_focus, bool not_in_game_pause, float deltaTime = 2.0);
+    void main_player_move(sf::View &view, sf::RenderWindow &window, Client &client, bool gained_focus, float deltaTime = 2.0);
 
     void check_collision_walls_players();
 

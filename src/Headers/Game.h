@@ -1,7 +1,6 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
-#include "Map.h"
 #include "RayCaster.h"
 #include "Server.h"
 #include "MainMenu.h"
@@ -14,24 +13,13 @@ struct Resolution {
 };
 
 struct ViewSize {
-    uint x = 430;
-    uint y = 240;
+    uint x = 560;
+    uint y = 315;
+//    uint x = 430;
+//    uint y = 240;
 //    uint x = 1920;
 //    uint y = 1080;
 
-};
-
-enum Round{
-    HAS_NOT_STARTED,
-    START,
-    IN_PROGRESS,
-    OVER,
-};
-
-enum GameMode {
-    DEATH_MATCH,
-    TAKEOVER,
-    NONE,
 };
 
 class Game {
@@ -46,9 +34,7 @@ private:
     Resolution resolution;
     sf::VideoMode desktop;
     sf::RenderWindow window;
-    sf::RectangleShape button;
     sf::Font font;
-    sf::Text label;
     sf::View view;
     Server server;
     Client client;
@@ -63,30 +49,18 @@ private:
 
 public:
     Game() : desktop(sf::VideoMode::getDesktopMode()),
-             window(sf::VideoMode(800, 600), "Blast", sf::Style::Titlebar | sf::Style::Close),
-             button(sf::Vector2f(100, 50)) {
+             window(sf::VideoMode(800, 600), "Blast", sf::Style::Titlebar | sf::Style::Close){
         //sf::VideoMode(1600, 800), "Blast", sf::Style::Titlebar | sf::Style::Close
         //window(desktop, "Blast", sf::Style::Fullscreen),
         view = sf::View(sf::FloatRect(0, 0, viewSize.x, viewSize.y));
         view.setCenter((sf::Vector2f)window.getPosition());
         //window.setView(view);
-
-        // Set the button color
-        button.setFillColor(sf::Color(128, 128, 128));
-
+        window.setVerticalSyncEnabled(true);
         // Load the font and create the label
         font.loadFromFile("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
-        label.setFont(font);
-        label.setString("Fullscreen");
-        label.setCharacterSize(15);
-        label.setFillColor(sf::Color::Black);
+        map.gameState = &gameState;
 
-
-        map.init_map_textures();
-        map.init_main_player();
-        map.init_walls(2);
-
-        mainMenu = MainMenu(font, videoMode, client, multiplayerAction);
+        mainMenu = MainMenu(font, videoMode, client, multiplayerAction, map);
 
     }
 
@@ -103,4 +77,10 @@ public:
     void round_duration();
 
     void handleKeyBindings();
+
+    void draw_score_menu();
+
+    void draw_in_game_pause_menu();
+
+    void draw_in_game_options_menu();
 };
