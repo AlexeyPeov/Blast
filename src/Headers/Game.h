@@ -101,4 +101,6 @@ public:
     void handleMultiplayerAction();
 
     void round_duration();
+
+    void handleKeyBindings();
 };

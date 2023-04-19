@@ -7,35 +7,19 @@ std::string current_dir() {
 
 void Map::init_map_textures() {
 
-    // release
-        this->player_texture.loadFromFile(current_dir() + "/textures/personStationary.png");
+    this->player_texture.loadFromFile(current_dir() + "/textures/personStationary.png");
 
-        this->wall_texture_unbreakable.loadFromFile(current_dir() + "/textures/unbreakableBorder.png");
-        this->floor_texture.loadFromFile(current_dir() + "/textures/floor.png");
-        this->wall_texture_5.loadFromFile(current_dir() + "/textures/border5.png");
-        this->wall_texture_4.loadFromFile(current_dir() + "/textures/border4.png");
-        this->wall_texture_3.loadFromFile(current_dir() + "/textures/border3.png");
-        this->wall_texture_2.loadFromFile(current_dir() + "/textures/border2.png");
-        this->wall_texture_1.loadFromFile(current_dir() + "/textures/border1.png");
+    this->wall_texture_unbreakable.loadFromFile(current_dir() + "/textures/unbreakableBorder.png");
+    this->floor_texture.loadFromFile(current_dir() + "/textures/floor.png");
+    this->wall_texture_5.loadFromFile(current_dir() + "/textures/border5.png");
+    this->wall_texture_4.loadFromFile(current_dir() + "/textures/border4.png");
+    this->wall_texture_3.loadFromFile(current_dir() + "/textures/border3.png");
+    this->wall_texture_2.loadFromFile(current_dir() + "/textures/border2.png");
+    this->wall_texture_1.loadFromFile(current_dir() + "/textures/border1.png");
 
-        this->missile_texture.loadFromFile(current_dir() + "/textures/missle.png");
+    this->missile_texture.loadFromFile(current_dir() + "/textures/missle.png");
 
-        this->explosion_texture.loadFromFile(current_dir() + "/textures/explosion.png");
-
-    //clion debug
-//    this->player_texture.loadFromFile(current_dir() + "/../textures/personStationary.png");
-//
-//    this->wall_texture_unbreakable.loadFromFile(current_dir() + "/../textures/unbreakableBorder.png");
-//    this->floor_texture.loadFromFile(current_dir() + "/../textures/floor.png");
-//    this->wall_texture_5.loadFromFile(current_dir() + "/../textures/border5.png");
-//    this->wall_texture_4.loadFromFile(current_dir() + "/../textures/border4.png");
-//    this->wall_texture_3.loadFromFile(current_dir() + "/../textures/border3.png");
-//    this->wall_texture_2.loadFromFile(current_dir() + "/../textures/border2.png");
-//    this->wall_texture_1.loadFromFile(current_dir() + "/../textures/border1.png");
-//
-//    this->missile_texture.loadFromFile(current_dir() + "/../textures/missle.png");
-//
-//    this->explosion_texture.loadFromFile(current_dir() + "/../textures/explosion.png");
+    this->explosion_texture.loadFromFile(current_dir() + "/textures/explosion.png");
 
 
     this->player_sprite = sf::Sprite(player_texture);
@@ -59,12 +43,12 @@ void Map::init_walls(int level) {
     if (level == 2) arr = &level_2[0];
     if (level == 3) arr = &level_3[0];
 
-    for (int position = 0; position < 800; position++) {
+    for (int position = 0; position < 15*15; position++) {
 
         Wall wall;
 
-        int x = ((position % 40) * 40) + 20;
-        int y = ((position / 40) * 40) + 20;
+        int x = ((position % 15) * 40) + 20;
+        int y = ((position / 15) * 40) + 20;
 
 
         if (arr[position] == UNBREAKABLE_WALL) {
@@ -73,7 +57,7 @@ void Map::init_walls(int level) {
             wall = {.sprite = wall_sprite, .hp = 5};
         } else {
             //add to vector of positions
-            available_dm_spawn_positions.emplace_back(x,y);
+            available_dm_spawn_positions.emplace_back(x, y);
         }
 
         if (arr[position] != FLOOR) {
@@ -329,7 +313,8 @@ void Map::update_player() {
 
 
 
-void Map::main_player_move(sf::View &view, sf::RenderWindow &window, Client &client, bool gained_focus, bool not_in_game_pause, float deltaTime) {
+void Map::main_player_move(sf::View &view, sf::RenderWindow &window, Client &client, bool gained_focus,
+                           bool not_in_game_pause, float deltaTime) {
 
     if (main_player.id == 0) {
         main_player.id = client.id;
@@ -338,7 +323,7 @@ void Map::main_player_move(sf::View &view, sf::RenderWindow &window, Client &cli
     sf::Vector2f worldMousePos = window.mapPixelToCoords(mouse_position);
 
     // Update the view gradually if the mouse is on the full top/bottom/left/right of the screen
-    if(gained_focus && not_in_game_pause){
+    if (gained_focus && not_in_game_pause) {
         if (mouse_position.x <= 5) {
             view.move(-3.0f * deltaTime, 0);
             window.setView(view);
@@ -357,8 +342,8 @@ void Map::main_player_move(sf::View &view, sf::RenderWindow &window, Client &cli
         }
     }
     if (main_player.hp > 0) {
-        if(gained_focus && not_in_game_pause) {
-        main_player.move(worldMousePos);
+        if (gained_focus && not_in_game_pause) {
+            main_player.move(worldMousePos);
             if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
                 if (init_missile_as_main_player(main_player)) {
                     std::cout << "MAIN PLAYER INIT MISSILE\n";
@@ -434,7 +419,7 @@ void Map::check_collision_missiles_walls_players() {
                     missile.life = false;
                     init_explosion(missile);
 
-                    if(main_player.hp <= 0){
+                    if (main_player.hp <= 0) {
                         missile.player_who_shot->score++;
                     }
 

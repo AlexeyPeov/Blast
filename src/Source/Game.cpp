@@ -193,20 +193,16 @@ void Game::run() {
         if (gameState == GameState::MAIN_MENU) {
             mainMenu.draw(window);
             map.main_player.hp = 100;
-            // mainMenu.drawRectangle(window, font);
         } else if (gameState == GameState::IN_GAME || gameState == GameState::IN_GAME_PAUSE) {
 
-            if(gameMode == GameMode::DEATH_MATCH){
+            if (gameMode == GameMode::DEATH_MATCH) {
                 death_match();
             }
 
 
-
             object::dont_shoot(client.object);
-           // if (gained_focus && gameState != GameState::IN_GAME_PAUSE) {
-               // std::cout << gained_focus << " " << (gameState != GameState::IN_GAME_PAUSE) << "\n";
-                map.main_player_move(view, window, client, gained_focus, (gameState != GameState::IN_GAME_PAUSE));
-          //  }
+            map.main_player_move(view, window, client, gained_focus, (gameState != GameState::IN_GAME_PAUSE));
+
 
             //update values
             map.update_walls();
@@ -285,35 +281,32 @@ void Game::handleMultiplayerAction() {
     multiplayerAction = MultiplayerAction::NOTHING;
 }
 
-void Game::death_match(){
+void Game::death_match() {
 
     static bool has_round_started = false;
 
     std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
     static std::chrono::system_clock::time_point end;
 
-    if(!has_round_started){
-        end = std::chrono::system_clock::now() + std::chrono::minutes(5);
+    if (!has_round_started) {
+        end = std::chrono::system_clock::now() + std::chrono::minutes(15);
         has_round_started = true;
     } else {
 
         auto elapsed = std::chrono::duration_cast<std::chrono::minutes>(now - end);
 
-        if (elapsed.count() >= 5)
-        {
+        if (elapsed.count() >= 15) {
             gameMode = GameMode::NONE;
         } else {
 
 
-            if(map.main_player.hp <= 0){
+            if (map.main_player.hp <= 0) {
                 map.main_player.hp = 100;
                 map.main_player.sprite.setPosition(map.random_non_wall_position());
             }
 
 
         }
-
-
 
 
     }
@@ -344,6 +337,12 @@ void Game::death_match(){
     // return
 }
 
-void Game::takeover(){}
+void Game::takeover() {}
 
-void Game::next_round(){}
+void Game::next_round() {}
+
+void Game::handleKeyBindings() {
+    // if main menu
+
+    // if in game
+}
