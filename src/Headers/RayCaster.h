@@ -5,6 +5,7 @@
 #include "Map.h"
 
 const float PI = 3.14159265f;
+const float BIG_FLOAT_NUMBER = 400000000;
 
  //ray marching
 //float distanceToScene(sf::Vector2f point, const std::vector<Wall>& walls) {
@@ -22,10 +23,15 @@ const float PI = 3.14159265f;
 //}
  namespace RayCaster {
 
-     float distanceToScene(sf::Vector2f point, const std::vector<Wall> &walls);
+     float distanceToClosestWall(sf::Vector2f point, std::unordered_map<sf::Vector2f, Wall, Vector2fHash> &walls);
 
 
-     void castRays(sf::RenderTexture &renderTexture, const sf::Vector2f &playerPos, const std::vector<Wall> &walls);
+     void castRays(sf::RenderTexture &renderTexture, const sf::Vector2f &playerPos, std::unordered_map<sf::Vector2f, Wall, Vector2fHash> &walls);
+
+//     float distanceToScene(sf::Vector2f point, const std::vector<Wall> &walls);
+//
+//
+//     void castRays(sf::RenderTexture &renderTexture, const sf::Vector2f &playerPos, const std::vector<Wall> &walls);
  }
 //float distanceToScene(sf::RenderWindow &window, sf::Vector2f point, const std::vector<Wall> &walls) {
 //    float minDistance = std::numeric_limits<float>::max();

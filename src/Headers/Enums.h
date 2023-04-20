@@ -35,6 +35,7 @@ enum class MenuState {
     CHOOSING_GAME_STATE,
     SINGLE_PLAYER,
     IS_HOST,
+    HOST_OPTIONS,
     CLIENT,
     MULTIPLAYER_LOBBY,
     OPTIONS,

@@ -72,6 +72,8 @@ struct MainMenu {
 
     void drawIsHostMenu(sf::RenderWindow &window);
 
+    void drawHostOptionsMenu(sf::RenderWindow &window);
+
     void drawClientMenu(sf::RenderWindow &window);
 
     void drawOptionsMenu(sf::RenderWindow &window);

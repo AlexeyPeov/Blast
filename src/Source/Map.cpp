@@ -1,5 +1,6 @@
 #include "../Headers/Map.h"
 #include "../Headers/Levels.h"
+#include "../Headers/RayCaster.h"
 
 std::string current_dir() {
     return std::filesystem::current_path().string();
@@ -38,8 +39,10 @@ void Map::init_map_textures() {
 void Map::init_walls(int level) {
 
     walls.clear();
+    unbreakable_walls.clear();
     floors.clear();
     available_dm_spawn_positions.clear();
+    walls_map.clear();
 
 
     int *arr;
@@ -48,6 +51,8 @@ void Map::init_walls(int level) {
     if (level == 1) { arr = &level_1[0]; arr_width = level_1_width; arr_height = level_1_height; }
     if (level == 2) { arr = &level_2[0]; arr_width = level_2_width; arr_height = level_2_height; }
     if (level == 3) { arr = &dust_3[0]; arr_width = dust_3_width; arr_height = dust_3_height; }
+
+    unbreakable_walls_texture.create(arr_width* 40, arr_height* 40);
 
     for (int position = 0; position < (arr_width * arr_height); position++) {
 
@@ -61,22 +66,33 @@ void Map::init_walls(int level) {
             wall = {.sprite = unbreakable_wall_sprite, .hp = 99999999};
         } else if (arr[position] == WALL) {
             wall = {.sprite = wall_sprite, .hp = 5};
-        } else {
+        } else if (arr[position] == FLOOR) {
             //add to vector of positions
             available_dm_spawn_positions.emplace_back(x, y);
         }
 
-        if (arr[position] != FLOOR && arr[position] != IRRELEVANT_WALL) {
+        if (arr[position] == WALL) {
             wall.sprite.setPosition(x, y);
             config_sprite(wall.sprite);
             walls.push_back(wall);
-        } else if (arr[position] != IRRELEVANT_WALL) {
+            walls_map[sf::Vector2f(x,y)] = wall;
+        } else if (arr[position] == UNBREAKABLE_WALL) {
+            wall.sprite.setPosition(x, y);
+            config_sprite(wall.sprite);
+            unbreakable_walls.push_back(wall);
+            unbreakable_walls_texture.draw(wall.sprite);
+            walls_map[sf::Vector2f(x,y)] = wall;
+        }
+
+        else if (arr[position] != UNBREAKABLE_WALL && arr[position] != IRRELEVANT_WALL) {
             floor_sprite.setPosition(x, y);
             floor_sprite.setOrigin(floor_sprite.getTexture()->getSize().x / 2,
                                    floor_sprite.getTexture()->getSize().y / 2);
-            floors.push_back(floor_sprite);
+            unbreakable_walls_texture.draw(floor_sprite);
         }
     }
+    unbreakable_walls_texture.display();
+    unbreakable_walls_sprite.setTexture(unbreakable_walls_texture.getTexture());
 
 }
 
@@ -375,6 +391,14 @@ void Map::check_collision_walls_players() {
         }
         collision(wall.sprite, main_player.sprite, wall_can_move, player_can_move);
     }
+    for (auto &wall: unbreakable_walls) {
+        int wall_can_move = false;
+        int player_can_move = true;
+        for (auto &[id, player]: players) {
+            collision(wall.sprite, player.sprite, wall_can_move, player_can_move);
+        }
+        collision(wall.sprite, main_player.sprite, wall_can_move, player_can_move);
+    }
 }
 
 void Map::check_collision_player_players() {
@@ -410,6 +434,16 @@ void Map::check_collision_missiles_walls_players() {
                     break;
                 }
             }
+
+            for (auto &wall: unbreakable_walls) {
+                if (collision(wall.sprite, missile.sprite, wall_can_move, missile_can_move)) {
+                    wall.hp -= 1;
+                    missile.life = false;
+                    init_explosion(missile);
+                    break;
+                }
+            }
+
             for (auto &[id, player]: players) {
                 if (missile.player_who_shot != &player && player.hp > 0) {
                     if (collision(player.sprite, missile.sprite, wall_can_move, missile_can_move)) {
@@ -445,7 +479,8 @@ void Map::check_collision_missiles_walls_players() {
 }
 
 void Map::draw_walls(sf::RenderWindow &window) {
-    for (const auto &wall: walls) window.draw(wall.sprite);
+    for (const auto &wall: walls) {window.draw(wall.sprite);}
+    window.draw(unbreakable_walls_sprite);
 }
 
 void Map::draw_floors(sf::RenderWindow &window) {
@@ -480,3 +515,47 @@ sf::Vector2f Map::random_non_wall_position() {
     return available_dm_spawn_positions.at(rand() % available_dm_spawn_positions.size());
 
 }
+/*
+
+std::vector<sf::Vector2f> Map::calculateFov() {
+    std::vector<sf::Vector2f> fov;
+
+    std::vector<sf::Rect<float>> walls_bounds;
+    walls_bounds.reserve(walls.size());
+    for(auto &wall : walls){
+        walls_bounds.emplace_back(wall.sprite.getGlobalBounds());
+    }
+
+    // Cast rays in a circle around the player
+    for (float angle = 0; angle < 360; angle += 2) {
+        // Calculate the direction of the ray
+        float dx = std::cos(angle * PI / 180.f);
+        float dy = std::sin(angle * PI / 180.f);
+
+        // March the ray until it hits a wall
+        sf::Vector2f rayPos = main_player.sprite.getPosition();
+        while (true) {
+            // Check if the ray hit a wall
+            bool hitWall = false;
+            for (const auto& rect : walls_bounds) {
+
+                if (rect.contains(rayPos)) {
+                    hitWall = true;
+                    break;
+                }
+            }
+
+            if (hitWall) {
+                // Add the intersection point to the FOV
+                fov.push_back(rayPos);
+                break;
+            }
+
+            // Move the ray forward
+            rayPos.x += dx;
+            rayPos.y += dy;
+        }
+    }
+
+    return fov;
+}*/

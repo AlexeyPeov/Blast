@@ -24,6 +24,14 @@ struct Wall {
 
 std::string current_dir();
 
+struct Vector2fHash {
+    std::size_t operator()(const sf::Vector2f& v) const {
+        std::size_t h1 = std::hash<float>{}(v.x);
+        std::size_t h2 = std::hash<float>{}(v.y);
+        return h1 ^ (h2 << 1);
+    }
+};
+
 struct Map {
 
     sf::Texture wall_texture_5, wall_texture_4, wall_texture_3, wall_texture_2, wall_texture_1, wall_texture_unbreakable;
@@ -40,15 +48,21 @@ struct Map {
     sf::Sprite explosion_sprite;
     sf::Sprite missile_sprite;
 
+    sf::RenderTexture unbreakable_walls_texture;
+    sf::Sprite unbreakable_walls_sprite;
+
 
 
     std::vector<sf::Vector2f> available_dm_spawn_positions;
     std::vector<Wall> walls;
+    std::vector<Wall> unbreakable_walls;
     std::vector<sf::Sprite> floors;
     std::unordered_map<int, Player> players;
     std::vector<Animation> explosions;
     std::vector<Missile> missiles;
     Player main_player;
+
+    std::unordered_map<sf::Vector2f, Wall, Vector2fHash> walls_map;
 
     GameState *gameState = nullptr;
 
@@ -97,4 +111,7 @@ struct Map {
     void draw_explosions(sf::RenderWindow &window);
 
     sf::Vector2f random_non_wall_position();
+
+    std::vector<sf::Vector2f> calculateFov();
+
 };

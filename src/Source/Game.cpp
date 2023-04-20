@@ -223,13 +223,34 @@ void Game::run() {
             map.draw_walls(window);
             map.draw_floors(window);
             map.draw_missiles(window);
-            map.draw_players(window);
+            //map.draw_players(window);
             map.draw_explosions(window);
+
             handleKeyBindings();
+
 
             if (gameState == GameState::IN_GAME_PAUSE) {
                // mainMenu.draw_in_pause(window, gameState);
             }
+
+            sf::RenderTexture renderTexture;
+            renderTexture.create(50 * 40, 50 * 40);
+// Clear the render texture with a transparent color
+            renderTexture.clear(sf::Color::Transparent);
+
+// Draw the visible area onto the render texture
+            RayCaster::castRays(renderTexture, map.main_player.sprite.getPosition(), map.walls_map);
+
+// Display the contents of the render texture
+            //renderTexture.display();
+// Create a new sprite using the render texture as its texture
+            sf::Sprite visibleAreaSprite(renderTexture.getTexture());
+            //visibleAreaSprite.setPosition(map.main_player.sprite.getPosition());
+            visibleAreaSprite.setScale(1.f, -1.f);
+            visibleAreaSprite.setPosition(0.f, renderTexture.getSize().y);
+// Apply the shader to the sprite
+            window.draw(visibleAreaSprite);//, &shader);
+            map.draw_players(window);
 
         }
         if (client.active) {
@@ -292,6 +313,7 @@ void Game::run() {
 //
 //    // Draw the shape using the shader
 //            window.draw(shape, &shader);*/
+
 
         window.display();
 

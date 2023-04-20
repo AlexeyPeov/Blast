@@ -186,12 +186,12 @@ void MainMenu::drawMultiplayerLobby(sf::RenderWindow &window) {
 
     if (client->object.team == 1) {
         sf::Text text(client->object.nickname, font);
-        setUpText(text, 24, viewCenter.x - 120 * 3, viewCenter.y + team_1_text_offset, sf::Color::White);
+        setUpText(text, 24, viewCenter.x - 60 * 3, viewCenter.y + team_1_text_offset, sf::Color::White);
         team_1_text_offset += 20 * 3;
         team_1_text[client->object.id] = text;
     } else {
         sf::Text text(client->object.nickname, font);
-        setUpText(text, 24, viewCenter.x - 15 * 3, viewCenter.y + team_2_text_offset, sf::Color::White);
+        setUpText(text, 24, viewCenter.x + 45 * 3, viewCenter.y + team_2_text_offset, sf::Color::White);
         team_2_text_offset += 20 * 3;
         team_2_text[client->object.id] = text;
     }
@@ -199,12 +199,12 @@ void MainMenu::drawMultiplayerLobby(sf::RenderWindow &window) {
     for (auto &player: client->objects) {
         if (player.team == 1) {
             sf::Text text(player.nickname, font);
-            setUpText(text, 24, viewCenter.x - 120 * 3, viewCenter.y + team_1_text_offset, sf::Color::White);
+            setUpText(text, 24, viewCenter.x - 60 * 3, viewCenter.y + team_1_text_offset, sf::Color::White);
             team_1_text_offset += 20 * 3;
             team_1_text[player.id] = text;
         } else {
             sf::Text text(player.nickname, font);
-            setUpText(text, 24, viewCenter.x - 15 * 3, viewCenter.y + team_2_text_offset, sf::Color::White);
+            setUpText(text, 24, viewCenter.x + 45 * 3, viewCenter.y + team_2_text_offset, sf::Color::White);
             team_2_text_offset += 20 * 3;
             team_1_text[player.id] = text;
         }
@@ -215,7 +215,6 @@ void MainMenu::drawMultiplayerLobby(sf::RenderWindow &window) {
 
     text1 = sf::Text("Amogusi", font);
     text2 = sf::Text("Abobusi", font);
-    text3 = sf::Text("Maps:", font);
     text4 = sf::Text("Start", font);
     text5 = sf::Text("Back", font);
 
@@ -229,12 +228,11 @@ void MainMenu::drawMultiplayerLobby(sf::RenderWindow &window) {
     hostRadioBox.setOutlineColor(sf::Color(61, 61, 61));
     hostRadioBox.setPosition(viewCenter.x, viewCenter.y - 18 * 3);
 
-    setUpText(chooseTeam, 36, viewCenter.x - 80 * 3, viewCenter.y - 80 * 3, sf::Color::White);
-    setUpText(text1, 36, viewCenter.x - 120 * 3, viewCenter.y - 60 * 3, sf::Color::White);
-    setUpText(text2, 36, viewCenter.x - 15 * 3, viewCenter.y - 60 * 3, sf::Color::White);
-    setUpText(text3, 36, viewCenter.x + 70 * 3, viewCenter.y - 60 * 3, sf::Color::White);
-    setUpText(text4, 36, viewCenter.x - 20 * 3, viewCenter.y + 60 * 3, sf::Color::White);
-    setUpText(text5, 36, viewCenter.x - 20 * 3, viewCenter.y + 80 * 3, sf::Color::White);
+    setUpText(chooseTeam, 36, viewCenter.x - 20 * 3, viewCenter.y - 80 * 3, sf::Color::White);
+    setUpText(text1, 36, viewCenter.x - 60 * 3, viewCenter.y - 60 * 3, sf::Color::White);
+    setUpText(text2, 36, viewCenter.x + 45 * 3, viewCenter.y - 60 * 3, sf::Color::White);
+    setUpText(text4, 36, viewCenter.x, viewCenter.y + 60 * 3, sf::Color::White);
+    setUpText(text5, 36, viewCenter.x, viewCenter.y + 80 * 3, sf::Color::White);
 
     // changing teams
     if (Mouse::cursorCollidesWithItem(mousePos, text1.getGlobalBounds())) {
@@ -299,7 +297,6 @@ void MainMenu::drawMultiplayerLobby(sf::RenderWindow &window) {
     window.draw(chooseTeam);
     window.draw(text1);
     window.draw(text2);
-    window.draw(text3);
     window.draw(text4);
     window.draw(text5);
     for (auto &team1: team_1_text) {
@@ -348,7 +345,7 @@ void MainMenu::drawIsHostMenu(sf::RenderWindow &window) {
         if (Mouse::clicked()) {
             if (host) {
                 *this->multiplayerAction = MultiplayerAction::START_SERVER_AND_CLIENT;
-                menuState = MenuState::MULTIPLAYER_LOBBY;
+                menuState = MenuState::HOST_OPTIONS;
             } else {
                 menuState = MenuState::CLIENT;
             }
@@ -382,6 +379,105 @@ void MainMenu::drawIsHostMenu(sf::RenderWindow &window) {
         hostRadioBox.setFillColor(sf::Color(197, 255, 202));
     }
     window.draw(hostRadioBox);
+}
+
+void MainMenu::drawHostOptionsMenu(sf::RenderWindow &window)  {
+
+    static int map_chosen = 1;
+    static int game_mode_chosen = 1;
+
+    sf::Vector2i mp = sf::Mouse::getPosition(window);
+    sf::Vector2f mousePos = window.mapPixelToCoords(mp);
+
+    sf::Vector2f viewCenter = window.getView().getCenter();
+
+    sf::Text settings_text("Settings", font);
+
+    text1 = sf::Text("Choose map: ", font);         sf::Text game_mode_text("game mode:", font);
+    text2 = sf::Text("empty_large(40x40)", font);   sf::Text death_match_text("deathmatch", font);
+    text3 = sf::Text("small(15x15)", font);         sf::Text takeover_text("takeover", font);
+    text4 = sf::Text("dust_3(50x50)", font);
+    sf::Text lobby_text = sf::Text("go to lobby", font);
+    text5 = sf::Text("Back", font);
+
+    menuRect.setFillColor(sf::Color(128, 128, 128));
+    menuRect.setSize(sf::Vector2f(300 * 3 * 2, 200 * 3 * 2));
+    menuRect.setPosition(viewCenter);
+    center_rect_shape(menuRect);
+
+    setUpText(settings_text, 36, viewCenter.x - 20 * 3, viewCenter.y - 80 * 3, sf::Color::White);
+    setUpText(text1, 36, viewCenter.x - 110 * 3, viewCenter.y - 60 * 3, sf::Color::White);          setUpText(game_mode_text, 36, viewCenter.x + 60 * 3, viewCenter.y - 60 * 3, sf::Color::White);
+    setUpText(text2, 36, viewCenter.x - 110 * 3, viewCenter.y - 20 * 3, sf::Color::White);           setUpText(death_match_text, 36, viewCenter.x + 60 * 3, viewCenter.y - 20 * 3, sf::Color::White);
+    setUpText(text3, 36, viewCenter.x - 110 * 3, viewCenter.y, sf::Color::White);                    setUpText(takeover_text, 36, viewCenter.x + 60 * 3, viewCenter.y, sf::Color::White);
+    setUpText(text4, 36, viewCenter.x - 110 * 3, viewCenter.y + 20 * 3, sf::Color::White);
+    setUpText(lobby_text, 36, viewCenter.x - 40 * 3, viewCenter.y + 60 * 3, sf::Color::White);
+    setUpText(text5, 36, viewCenter.x - 20 * 3, viewCenter.y + 80 * 3, sf::Color::White);
+
+    if (Mouse::cursorCollidesWithItem(mousePos, text2.getGlobalBounds())) {
+        text2.setFillColor(sf::Color::Yellow);
+        if(Mouse::clicked()){
+            map_chosen = 1;
+        }
+    } else if (Mouse::cursorCollidesWithItem(mousePos, text3.getGlobalBounds())) {
+        text3.setFillColor(sf::Color::Yellow);
+        if(Mouse::clicked()){
+            map_chosen = 2;
+        }
+    } else if (Mouse::cursorCollidesWithItem(mousePos, text4.getGlobalBounds())) {
+        text4.setFillColor(sf::Color::Yellow);
+        if(Mouse::clicked()){
+            map_chosen = 3;
+        }
+    } else if (Mouse::cursorCollidesWithItem(mousePos, death_match_text.getGlobalBounds())) {
+        death_match_text.setFillColor(sf::Color::Yellow);
+        if(Mouse::clicked()){
+            game_mode_chosen = 1;
+        }
+    } else if (Mouse::cursorCollidesWithItem(mousePos, takeover_text.getGlobalBounds())) {
+        takeover_text.setFillColor(sf::Color::Yellow);
+        if(Mouse::clicked()){
+            game_mode_chosen = 2;
+        }
+    } else if (Mouse::cursorCollidesWithItem(mousePos, lobby_text.getGlobalBounds())) {
+        lobby_text.setFillColor(sf::Color::Yellow);
+        if (Mouse::clicked()) {
+            menuState = MenuState::MULTIPLAYER_LOBBY;
+//            map->init_map_textures();
+//            map->init_main_player();
+//            map->init_walls(map_chosen);
+//            menuState = MenuState::START;
+//            *map->gameState = GameState::IN_GAME;
+        }
+    } else if (Mouse::cursorCollidesWithItem(mousePos, text5.getGlobalBounds())) {
+        text5.setFillColor(sf::Color::Yellow);
+        if (Mouse::clicked()) {
+            menuState = MenuState::MAIN_MENU;
+        }
+    }
+
+    if(map_chosen == 1){
+        text2.setFillColor(sf::Color::Yellow);
+    } else if (map_chosen == 2){
+        text3.setFillColor(sf::Color::Yellow);
+    } else if (map_chosen == 3){
+        text4.setFillColor(sf::Color::Yellow);
+    }
+
+    if(game_mode_chosen == 1){
+        death_match_text.setFillColor(sf::Color::Yellow);
+    } else if (game_mode_chosen == 2){
+        takeover_text.setFillColor(sf::Color::Yellow);
+    }
+
+
+    window.draw(menuRect);
+                    window.draw(settings_text);
+    window.draw(text1);     window.draw(game_mode_text);
+    window.draw(text2);     window.draw(death_match_text);
+    window.draw(text3);     window.draw(takeover_text);
+    window.draw(text4);
+                window.draw(lobby_text);
+                window.draw(text5);
 }
 
 void MainMenu::drawClientMenu(sf::RenderWindow &window) {
@@ -500,6 +596,8 @@ void MainMenu::draw(sf::RenderWindow &window) {
         drawSinglePlayerMenu(window);
     } else if (menuState == MenuState::IS_HOST) {
         drawIsHostMenu(window);
+    } else if (menuState == MenuState::HOST_OPTIONS) {
+        drawHostOptionsMenu(window);
     } else if (menuState == MenuState::CLIENT) {
         drawClientMenu(window);
     } else if (menuState == MenuState::MULTIPLAYER_LOBBY) {
