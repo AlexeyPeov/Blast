@@ -17,6 +17,7 @@ void Map::init_map_textures() {
     this->wall_texture_3.loadFromFile(current_dir() + "/textures/border3.png");
     this->wall_texture_2.loadFromFile(current_dir() + "/textures/border2.png");
     this->wall_texture_1.loadFromFile(current_dir() + "/textures/border1.png");
+    this->dropped_ammo_texture.loadFromFile(current_dir() + "/textures/dropped_ammo.png");
 
     this->missile_texture.loadFromFile(current_dir() + "/textures/missle.png");
 
@@ -27,6 +28,8 @@ void Map::init_map_textures() {
 
     this->missile_sprite = sf::Sprite(missile_texture);
 
+    this->dropped_ammo_sprite.setTexture(dropped_ammo_texture);
+    config_sprite(dropped_ammo_sprite);
     this->explosion_sprite = sf::Sprite(explosion_texture);
 
     this->wall_sprite = sf::Sprite(wall_texture_5);
@@ -38,61 +41,64 @@ void Map::init_map_textures() {
 
 void Map::init_walls(int level) {
 
-    walls.clear();
-    unbreakable_walls.clear();
-    floors.clear();
     available_dm_spawn_positions.clear();
+    walls_for_collision_map.clear();
     walls_map.clear();
+    dropped_ammo.clear();
 
 
     int *arr;
-    int arr_width = 0;
-    int arr_height = 0;
-    if (level == 1) { arr = &level_1[0]; arr_width = level_1_width; arr_height = level_1_height; }
-    if (level == 2) { arr = &level_2[0]; arr_width = level_2_width; arr_height = level_2_height; }
-    if (level == 3) { arr = &dust_3[0]; arr_width = dust_3_width; arr_height = dust_3_height; }
+    if (level == 1) {
+        arr = &level_1[0];
+        width = level_1_width;
+        height = level_1_height;
+    }
+    else if (level == 2) { arr = &level_2[0]; width = level_2_width; height = level_2_height; }
+    else if (level == 3) { arr = &dust_3[0];  width = dust_3_width; height = dust_3_height; }
 
-    unbreakable_walls_texture.create(arr_width* 40, arr_height* 40);
+    unbreakable_walls_and_floors_texture.clear(sf::Color::Transparent);
+    unbreakable_walls_and_floors_texture.create(dust_3_width * 40, dust_3_height * 40);
+    unbreakable_walls_and_floors_texture.clear(sf::Color::Transparent);
 
-    for (int position = 0; position < (arr_width * arr_height); position++) {
+
+
+    for (int position = 0; position < (width * height); position++) {
 
         Wall wall;
 
-        int x = ((position % arr_width) * 40) + 20;
-        int y = ((position / arr_width) * 40) + 20;
-
+        int x = ((position % width) * 40) + 20;
+        int y = ((position / width) * 40) + 20;
 
         if (arr[position] == UNBREAKABLE_WALL) {
             wall = {.sprite = unbreakable_wall_sprite, .hp = 99999999};
+            wall.sprite.setPosition(x, y);
+            config_sprite(wall.sprite);
+            walls_for_collision_map[sf::Vector2f(x, y)] = wall;
+            unbreakable_walls_and_floors_texture.draw(wall.sprite);
         } else if (arr[position] == WALL) {
             wall = {.sprite = wall_sprite, .hp = 5};
-        } else if (arr[position] == FLOOR) {
-            //add to vector of positions
-            available_dm_spawn_positions.emplace_back(x, y);
-        }
-
-        if (arr[position] == WALL) {
             wall.sprite.setPosition(x, y);
             config_sprite(wall.sprite);
-            walls.push_back(wall);
-            walls_map[sf::Vector2f(x,y)] = wall;
-        } else if (arr[position] == UNBREAKABLE_WALL) {
-            wall.sprite.setPosition(x, y);
-            config_sprite(wall.sprite);
-            unbreakable_walls.push_back(wall);
-            unbreakable_walls_texture.draw(wall.sprite);
-            walls_map[sf::Vector2f(x,y)] = wall;
-        }
-
-        else if (arr[position] != UNBREAKABLE_WALL && arr[position] != IRRELEVANT_WALL) {
+            walls_for_collision_map[sf::Vector2f(x, y)] = wall;
+            walls_map[sf::Vector2f(x, y)] = wall;
             floor_sprite.setPosition(x, y);
             floor_sprite.setOrigin(floor_sprite.getTexture()->getSize().x / 2,
                                    floor_sprite.getTexture()->getSize().y / 2);
-            unbreakable_walls_texture.draw(floor_sprite);
+            unbreakable_walls_and_floors_texture.draw(floor_sprite);
+        } else if (arr[position] == FLOOR) {
+            available_dm_spawn_positions.emplace_back(x,y);
+            floor_sprite.setPosition(x, y);
+            floor_sprite.setOrigin(floor_sprite.getTexture()->getSize().x / 2,
+                                   floor_sprite.getTexture()->getSize().y / 2);
+            unbreakable_walls_and_floors_texture.draw(floor_sprite);
         }
     }
-    unbreakable_walls_texture.display();
-    unbreakable_walls_sprite.setTexture(unbreakable_walls_texture.getTexture());
+    unbreakable_walls_and_floors_texture.display();
+    unbreakable_walls_and_floors_sprite.setTexture(unbreakable_walls_and_floors_texture.getTexture());
+    //std::cout << unbreakable_walls_and_floors_sprite.getPosition().x << " " <<  unbreakable_walls_and_floors_sprite.getPosition().y << "\n";
+    //unbreakable_walls_and_floors_sprite.setPosition(0.f, unbreakable_walls_and_floors_texture.getSize().y);
+    //unbreakable_walls_and_floors_sprite.setScale(1.f, -1.f);
+
 
 }
 
@@ -102,7 +108,7 @@ void Map::init_main_player() {
     int hp = 100;
     main_player = Player(player_sprite, movement_speed, rotation_degree, hp, 0);
     config_sprite(main_player.sprite);
-    main_player.sprite.setPosition(100, 100);
+    main_player.sprite.setPosition(random_non_wall_position());
 }
 
 Player Map::init_new_player(int id, float pos_x, float pos_y) const {
@@ -131,12 +137,11 @@ void Map::init_missile_as_connected_player(Player &player) {
     missile.sprite.setPosition(player.sprite.getPosition().x + dx, player.sprite.getPosition().y - dy);
 
     player.timeSinceLastShot = 0;
-
     missiles.push_back(missile);
 }
 
 bool Map::init_missile_as_main_player(Player &player) {
-    if (player.timeSinceLastShot > player.shootDelay) {
+    if (player.timeSinceLastShot > player.shootDelay && player.bullets > 0) {
         int movement_speed = 40;
         int rotation_degree = player.rotation_degree;
         Missile missile = Missile(missile_sprite, movement_speed, rotation_degree);
@@ -152,7 +157,7 @@ bool Map::init_missile_as_main_player(Player &player) {
         missile.sprite.setPosition(player.sprite.getPosition().x + dx, player.sprite.getPosition().y - dy);
 
         player.timeSinceLastShot = 0;
-
+        player.bullets--;
         missiles.push_back(missile);
         return true;
     }
@@ -165,19 +170,16 @@ void Map::init_explosion(Missile &missile) {
     explosions.push_back(explosion);
 }
 
-void Map::update_walls() {
-    for (auto wall = walls.begin(); wall != walls.end();) {
-
-        if (wall->hp < 5) {
-            if (wall->hp == 4) { wall->sprite.setTexture(wall_texture_4); }
-            else if (wall->hp == 3) { wall->sprite.setTexture(wall_texture_3); }
-            else if (wall->hp == 2) { wall->sprite.setTexture(wall_texture_2); }
-            else if (wall->hp == 1) { wall->sprite.setTexture(wall_texture_1); }
-        }
-        if (wall->hp <= 0) {
-            wall = walls.erase(wall);
-        } else {
-            wall++;
+void Map::update_wall(Wall &wall) {
+    if (wall.hp < 5) {
+        if (wall.hp == 4) { wall.sprite.setTexture(wall_texture_4); }
+        else if (wall.hp == 3) { wall.sprite.setTexture(wall_texture_3); }
+        else if (wall.hp == 2) { wall.sprite.setTexture(wall_texture_2); }
+        else if (wall.hp == 1) { wall.sprite.setTexture(wall_texture_1); }
+        else if (wall.hp <= 0) {
+            available_dm_spawn_positions.emplace_back(wall.sprite.getPosition());
+            walls_for_collision_map.erase(wall.sprite.getPosition());
+            walls_map.erase(wall.sprite.getPosition());
         }
     }
 }
@@ -190,7 +192,6 @@ void Map::update_missile(Missile &missile) {
 }
 
 void Map::update_missiles() {
-    //std::cout << "AMOUNT OF MISSILES: " << missiles.size() << "\n";
     for (auto missile = missiles.begin(); missile != missiles.end();) {
         if (missile->life) {
             missile->previousPosition = missile->sprite.getPosition();
@@ -286,15 +287,14 @@ void Map::update_players(Client &client) {
         }
         if (object.hp > 0) {
             bool is_shooting = object::is_shooting(object);
-
-            players[object.id].hp = object.hp;
-            players[object.id].sprite.setRotation(object.rotation);
-            players[object.id].sprite.setPosition(object.pos_x, object.pos_y);
             if (is_shooting) {
-                std::cout << "OTHER PLAYER SHOOTIN\n";
+                //std::cout << "OTHER PLAYER SHOOTIN\n";
                 init_missile_as_connected_player(players[object.id]);
             }
         }
+        players[object.id].hp = object.hp;
+        players[object.id].sprite.setRotation(object.rotation);
+        players[object.id].sprite.setPosition(object.pos_x, object.pos_y);
     }
 }
 
@@ -376,6 +376,7 @@ void Map::main_player_move(sf::View &view, sf::RenderWindow &window, Client &cli
         client.object.pos_y = main_player.sprite.getPosition().y;
         client.object.rotation = main_player.sprite.getRotation();
     }
+    client.object.bullets = main_player.bullets;
     client.object.hp = main_player.hp;
     client.object.kills = main_player.kills;
     client.object.deaths = main_player.deaths;
@@ -383,7 +384,28 @@ void Map::main_player_move(sf::View &view, sf::RenderWindow &window, Client &cli
 
 
 void Map::check_collision_walls_players() {
-    for (auto &wall: walls) {
+
+    // check collision on top, bottom, left, right to the square a player is standing on
+    int x = main_player.sprite.getPosition().x;
+    int y = main_player.sprite.getPosition().y;
+    sf::Vector2f player_pos = sf::Vector2f((x / 40) * 40 + 20, (y / 40) * 40 + 20);
+
+    sf::Vector2f theoretical_wall_pos[4] = {
+            {player_pos.x, player_pos.y - 40},
+            {player_pos.x, player_pos.y + 40},
+            {player_pos.x - 40, player_pos.y},
+            {player_pos.x + 40, player_pos.y},
+    };
+
+    int wall_can_move = false;
+    int player_can_move = true;
+    for(auto position : theoretical_wall_pos){
+        if (walls_for_collision_map.count(position) > 0) {
+            collision(walls_for_collision_map[position].sprite, main_player.sprite, wall_can_move, player_can_move);
+        }
+    }
+
+   /* for (auto &wall: walls) {
         int wall_can_move = false;
         int player_can_move = true;
         for (auto &[id, player]: players) {
@@ -399,6 +421,13 @@ void Map::check_collision_walls_players() {
         }
         collision(wall.sprite, main_player.sprite, wall_can_move, player_can_move);
     }
+    */
+
+
+
+
+
+
 }
 
 void Map::check_collision_player_players() {
@@ -411,7 +440,47 @@ void Map::check_collision_player_players() {
     }
 }
 
+void Map::check_collision_players_ammo(){
+
+    auto it = dropped_ammo.begin();
+    while (it != dropped_ammo.end()){
+        bool picked_up = false;
+        auto &[amount, ammo] = *it;
+        /*for (auto &[id, player] : players){
+            if(player.hp > 0){
+                if (collision(ammo, player.sprite, false, false)){
+                    player.bullets += amount;
+                    if (player.bullets > max_bullets){
+                        player.bullets = max_bullets;
+                    }
+                    picked_up = true;
+                    break;
+                }
+            }
+        }*/
+
+        if (collision(ammo, main_player.sprite, false, false)){
+            if(main_player.hp > 0){
+                main_player.bullets += amount;
+                if (main_player.bullets > max_bullets){
+                    main_player.bullets = max_bullets;
+                }
+                picked_up = true;
+            }
+        }
+
+
+        if(!picked_up) {
+            it++;
+        } else {
+            it = dropped_ammo.erase(it);
+        }
+    }
+
+}
+
 void Map::check_collision_missiles_walls_players() {
+
     for (auto &missile: missiles) {
 
         sf::Vector2f missileDisplacement = missile.sprite.getPosition() - missile.previousPosition;
@@ -425,8 +494,19 @@ void Map::check_collision_missiles_walls_players() {
             float t = static_cast<float>(i) / steps;
 
             missile.sprite.setPosition(missile.previousPosition + missileDisplacement * t);
+            int x = missile.sprite.getPosition().x;
+            int y = missile.sprite.getPosition().y;
+            sf::Vector2f theoretical_wall_pos = sf::Vector2f((x / 40) * 40 + 20, (y / 40) * 40 + 20);
+            if (walls_for_collision_map.count(theoretical_wall_pos) > 0) {
+                if(walls_map.count(theoretical_wall_pos) > 0){
+                    walls_map[theoretical_wall_pos].hp--;
+                    update_wall(walls_map[theoretical_wall_pos]);
+                }
+                missile.life = false;
+                init_explosion(missile);
+            }
 
-            for (auto &wall: walls) {
+           /* for (auto &wall: walls) {
                 if (collision(wall.sprite, missile.sprite, wall_can_move, missile_can_move)) {
                     wall.hp -= 1;
                     missile.life = false;
@@ -442,15 +522,18 @@ void Map::check_collision_missiles_walls_players() {
                     init_explosion(missile);
                     break;
                 }
-            }
+            }*/
 
             for (auto &[id, player]: players) {
                 if (missile.player_who_shot != &player && player.hp > 0) {
                     if (collision(player.sprite, missile.sprite, wall_can_move, missile_can_move)) {
-                        player.hp -= 50;
+                        player.hp -= missile.damage;
                         missile.life = false;
 
                         if (player.hp <= 0) {
+                            dropped_ammo_sprite.setPosition(player.sprite.getPosition());
+                            dropped_ammo.emplace_back(player.bullets, dropped_ammo_sprite);
+                            std::cout << player.bullets <<  " bullets dropped\n";
                             if(missile.player_who_shot == &main_player)
                                 main_player.kills++;
                         }
@@ -462,10 +545,12 @@ void Map::check_collision_missiles_walls_players() {
             }
             if (missile.player_who_shot != &main_player && main_player.hp > 0) {
                 if (collision(main_player.sprite, missile.sprite, wall_can_move, missile_can_move)) {
-                    main_player.hp -= 50;
+                    main_player.hp -= missile.damage;
                     missile.life = false;
 
                     if (main_player.hp <= 0) {
+                        dropped_ammo_sprite.setPosition(main_player.sprite.getPosition());
+                        dropped_ammo.emplace_back(main_player.bullets, dropped_ammo_sprite);
                         main_player.deaths++;
                     }
                     init_explosion(missile);
@@ -479,16 +564,16 @@ void Map::check_collision_missiles_walls_players() {
 }
 
 void Map::draw_walls(sf::RenderWindow &window) {
-    for (const auto &wall: walls) {window.draw(wall.sprite);}
-    window.draw(unbreakable_walls_sprite);
-}
-
-void Map::draw_floors(sf::RenderWindow &window) {
-    for (const auto &floor: floors) window.draw(floor);
+    window.draw(unbreakable_walls_and_floors_sprite);
+    for (const auto& [id, wall]: walls_map) {window.draw(wall.sprite);}
 }
 
 void Map::draw_missiles(sf::RenderWindow &window) {
     for (const auto &missile: missiles) window.draw(missile.sprite);
+}
+
+void Map::draw_dropped_ammo(sf::RenderWindow &window) {
+    for (const auto &[amount, ammo] : dropped_ammo) window.draw(ammo);
 }
 
 void Map::draw_players(sf::RenderWindow &window) {

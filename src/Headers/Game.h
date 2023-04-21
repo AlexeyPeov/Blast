@@ -59,7 +59,7 @@ public:
         // Load the font and create the label
         font.loadFromFile("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
         map.gameState = &gameState;
-
+        map.init_map_textures();
         mainMenu = MainMenu(font, videoMode, client, multiplayerAction, map);
 
     }

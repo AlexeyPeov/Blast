@@ -139,9 +139,9 @@ void MainMenu::drawSinglePlayerMenu(sf::RenderWindow &window) {
     } else if (Mouse::cursorCollidesWithItem(mousePos, playText.getGlobalBounds())) {
         playText.setFillColor(sf::Color::Yellow);
         if (Mouse::clicked()) {
-            map->init_map_textures();
-            map->init_main_player();
+            //map->init_map_textures();
             map->init_walls(map_chosen);
+            map->init_main_player();
             menuState = MenuState::START;
             *map->gameState = GameState::IN_GAME;
         }

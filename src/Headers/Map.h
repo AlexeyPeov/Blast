@@ -9,6 +9,7 @@
 #include "Animation.h"
 #include "Missile.h"
 #include "Enums.h"
+#include <unordered_set>
 
 #define IRRELEVANT_WALL 3
 #define UNBREAKABLE_WALL 2
@@ -38,6 +39,10 @@ struct Map {
     sf::Texture floor_texture;
     sf::Texture player_texture;
     sf::Texture explosion_texture;
+    sf::Texture dropped_ammo_texture;
+
+    int width = 0;
+    int height = 0;
 
     sf::Texture missile_texture;
 
@@ -47,22 +52,26 @@ struct Map {
     sf::Sprite player_sprite;
     sf::Sprite explosion_sprite;
     sf::Sprite missile_sprite;
+    sf::Sprite dropped_ammo_sprite;
 
-    sf::RenderTexture unbreakable_walls_texture;
-    sf::Sprite unbreakable_walls_sprite;
+    sf::RenderTexture unbreakable_walls_and_floors_texture;
+    sf::Sprite unbreakable_walls_and_floors_sprite;
 
 
 
     std::vector<sf::Vector2f> available_dm_spawn_positions;
-    std::vector<Wall> walls;
-    std::vector<Wall> unbreakable_walls;
-    std::vector<sf::Sprite> floors;
+
+    //std::vector<Wall> walls;
+    //std::vector<Wall> unbreakable_walls;
+    std::vector<std::pair<int, sf::Sprite>> dropped_ammo;
     std::unordered_map<int, Player> players;
     std::vector<Animation> explosions;
     std::vector<Missile> missiles;
     Player main_player;
 
+    std::unordered_map<sf::Vector2f, Wall, Vector2fHash> walls_for_collision_map;
     std::unordered_map<sf::Vector2f, Wall, Vector2fHash> walls_map;
+
 
     GameState *gameState = nullptr;
 
@@ -102,8 +111,6 @@ struct Map {
 
     void draw_walls(sf::RenderWindow &window);
 
-    void draw_floors(sf::RenderWindow &window);
-
     void draw_missiles(sf::RenderWindow &window);
 
     void draw_players(sf::RenderWindow &window);
@@ -114,4 +121,9 @@ struct Map {
 
     std::vector<sf::Vector2f> calculateFov();
 
+    void check_collision_players_ammo();
+
+    void draw_dropped_ammo(sf::RenderWindow &window);
+
+    void update_wall(Wall &wall);
 };

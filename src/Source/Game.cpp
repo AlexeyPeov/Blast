@@ -199,13 +199,12 @@ void Game::run() {
             if (gameMode == GameMode::DEATH_MATCH) {
                 death_match();
             }
-
             object::dont_shoot(client.object);
+
+
             map.main_player_move(view, window, client, gained_focus);
 
-
             //update values
-            map.update_walls();
             map.update_players(client);
             map.update_missiles();
             map.update_explosions();
@@ -215,16 +214,18 @@ void Game::run() {
             map.check_collision_walls_players();
             map.check_collision_missiles_walls_players();
             map.check_collision_player_players();
+            map.check_collision_players_ammo();
 
 
 
 
             //drawing
             map.draw_walls(window);
-            map.draw_floors(window);
             map.draw_missiles(window);
-            //map.draw_players(window);
+            map.draw_players(window);
             map.draw_explosions(window);
+            map.draw_dropped_ammo(window);
+
 
             handleKeyBindings();
 
@@ -233,24 +234,15 @@ void Game::run() {
                // mainMenu.draw_in_pause(window, gameState);
             }
 
-            sf::RenderTexture renderTexture;
-            renderTexture.create(50 * 40, 50 * 40);
-// Clear the render texture with a transparent color
+           /* sf::RenderTexture renderTexture;
+            renderTexture.create(map.width * 40, map.height * 40);
             renderTexture.clear(sf::Color::Transparent);
-
-// Draw the visible area onto the render texture
-            RayCaster::castRays(renderTexture, map.main_player.sprite.getPosition(), map.walls_map);
-
-// Display the contents of the render texture
-            //renderTexture.display();
-// Create a new sprite using the render texture as its texture
+            RayCaster::castRays(renderTexture, map.main_player.sprite.getPosition(), map.walls_for_collision_map);
             sf::Sprite visibleAreaSprite(renderTexture.getTexture());
-            //visibleAreaSprite.setPosition(map.main_player.sprite.getPosition());
             visibleAreaSprite.setScale(1.f, -1.f);
             visibleAreaSprite.setPosition(0.f, renderTexture.getSize().y);
-// Apply the shader to the sprite
-            window.draw(visibleAreaSprite);//, &shader);
-            map.draw_players(window);
+            window.draw(visibleAreaSprite);*/
+
 
         }
         if (client.active) {
@@ -378,6 +370,7 @@ void Game::death_match() {
 
             if (map.main_player.hp <= 0) {
                 map.main_player.hp = 100;
+                map.main_player.bullets = 120;
                 map.main_player.sprite.setPosition(map.random_non_wall_position());
             }
 

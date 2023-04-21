@@ -14,6 +14,7 @@ struct Object {
     int id = 0;
     char nickname[nickname_length] = "aboba";
     int hp = 0;
+    int bullets = 120;
     short team = 1;
     int kills = 0;
     int deaths = 0;
