@@ -9,7 +9,7 @@ struct Player : Entity {
     int hp = 0;
     int kills = 0;
     int deaths = 0;
-    int shootDelay = 5;
+    int shootDelay = 40;
     int timeSinceLastShot = 0;
     int bullets = 120;
 

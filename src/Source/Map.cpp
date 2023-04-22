@@ -80,7 +80,7 @@ void Map::init_walls(short level) {
             walls_for_collision_map[sf::Vector2f(x, y)] = wall;
             unbreakable_walls_texture.draw(wall.sprite);
         } else if (arr[position] == WALL) {
-            wall = {.sprite = wall_sprite, .hp = 5};
+            wall = {.sprite = wall_sprite, .hp = 15};
             wall.sprite.setPosition(x, y);
             config_sprite(wall.sprite);
             walls_for_collision_map[sf::Vector2f(x, y)] = wall;
