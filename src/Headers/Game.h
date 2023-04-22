@@ -57,7 +57,7 @@ public:
         //window.setView(view);
         window.setVerticalSyncEnabled(true);
         // Load the font and create the label
-        font.loadFromFile("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
+        font.loadFromFile(current_dir() + "/textures/DejaVuSans.ttf");
         map.gameState = &gameState;
         map.init_map_textures();
         mainMenu = MainMenu(font, videoMode, client, multiplayerAction, map, gameMode);
