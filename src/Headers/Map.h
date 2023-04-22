@@ -54,8 +54,11 @@ struct Map {
     sf::Sprite missile_sprite;
     sf::Sprite dropped_ammo_sprite;
 
-    sf::RenderTexture unbreakable_walls_and_floors_texture;
-    sf::Sprite unbreakable_walls_and_floors_sprite;
+    sf::RenderTexture unbreakable_walls_texture;
+    sf::RenderTexture floors_texture;
+
+    sf::Sprite unbreakable_walls_sprite;
+    sf::Sprite floors_sprite;
 
 
 
@@ -77,7 +80,7 @@ struct Map {
 
     void init_map_textures();
 
-    void init_walls(int level);
+    void init_walls(short level);
 
     void init_main_player();
 
@@ -126,4 +129,6 @@ struct Map {
     void draw_dropped_ammo(sf::RenderWindow &window);
 
     void update_wall(Wall &wall);
+
+    void draw_floors(sf::RenderWindow &window) const;
 };

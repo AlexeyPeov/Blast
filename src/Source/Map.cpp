@@ -39,7 +39,7 @@ void Map::init_map_textures() {
     explosion_sprite.setOrigin(40.f / 2.f, (float) explosion_sprite.getTexture()->getSize().y / 2.f);
 }
 
-void Map::init_walls(int level) {
+void Map::init_walls(short level) {
 
     available_dm_spawn_positions.clear();
     walls_for_collision_map.clear();
@@ -56,10 +56,14 @@ void Map::init_walls(int level) {
     else if (level == 2) { arr = &level_2[0]; width = level_2_width; height = level_2_height; }
     else if (level == 3) { arr = &dust_3[0];  width = dust_3_width; height = dust_3_height; }
 
-    unbreakable_walls_and_floors_texture.clear(sf::Color::Transparent);
-    unbreakable_walls_and_floors_texture.create(dust_3_width * 40, dust_3_height * 40);
-    unbreakable_walls_and_floors_texture.clear(sf::Color::Transparent);
+    unbreakable_walls_texture.clear(sf::Color::Transparent);
+    floors_texture.clear(sf::Color::Transparent);
 
+    unbreakable_walls_texture.create(dust_3_width * 40, dust_3_height * 40);
+    floors_texture.create(dust_3_width * 40, dust_3_height * 40);
+
+    unbreakable_walls_texture.clear(sf::Color::Transparent);
+    floors_texture.clear(sf::Color::Transparent);
 
 
     for (int position = 0; position < (width * height); position++) {
@@ -74,7 +78,7 @@ void Map::init_walls(int level) {
             wall.sprite.setPosition(x, y);
             config_sprite(wall.sprite);
             walls_for_collision_map[sf::Vector2f(x, y)] = wall;
-            unbreakable_walls_and_floors_texture.draw(wall.sprite);
+            unbreakable_walls_texture.draw(wall.sprite);
         } else if (arr[position] == WALL) {
             wall = {.sprite = wall_sprite, .hp = 5};
             wall.sprite.setPosition(x, y);
@@ -84,17 +88,20 @@ void Map::init_walls(int level) {
             floor_sprite.setPosition(x, y);
             floor_sprite.setOrigin(floor_sprite.getTexture()->getSize().x / 2,
                                    floor_sprite.getTexture()->getSize().y / 2);
-            unbreakable_walls_and_floors_texture.draw(floor_sprite);
+            floors_texture.draw(floor_sprite);
         } else if (arr[position] == FLOOR) {
             available_dm_spawn_positions.emplace_back(x,y);
             floor_sprite.setPosition(x, y);
             floor_sprite.setOrigin(floor_sprite.getTexture()->getSize().x / 2,
                                    floor_sprite.getTexture()->getSize().y / 2);
-            unbreakable_walls_and_floors_texture.draw(floor_sprite);
+            floors_texture.draw(floor_sprite);
         }
     }
-    unbreakable_walls_and_floors_texture.display();
-    unbreakable_walls_and_floors_sprite.setTexture(unbreakable_walls_and_floors_texture.getTexture());
+    unbreakable_walls_texture.display();
+    floors_texture.display();
+
+    unbreakable_walls_sprite.setTexture(unbreakable_walls_texture.getTexture());
+    floors_sprite.setTexture(floors_texture.getTexture());
     //std::cout << unbreakable_walls_and_floors_sprite.getPosition().x << " " <<  unbreakable_walls_and_floors_sprite.getPosition().y << "\n";
     //unbreakable_walls_and_floors_sprite.setPosition(0.f, unbreakable_walls_and_floors_texture.getSize().y);
     //unbreakable_walls_and_floors_sprite.setScale(1.f, -1.f);
@@ -140,7 +147,7 @@ void Map::init_missile_as_connected_player(Player &player) {
     missiles.push_back(missile);
 }
 
-bool Map::init_missile_as_main_player(Player &player) {
+bool Map::init_missile_as_main_player(Player &player){
     if (player.timeSinceLastShot > player.shootDelay && player.bullets > 0) {
         int movement_speed = 40;
         int rotation_degree = player.rotation_degree;
@@ -290,11 +297,12 @@ void Map::update_players(Client &client) {
             if (is_shooting) {
                 //std::cout << "OTHER PLAYER SHOOTIN\n";
                 init_missile_as_connected_player(players[object.id]);
+                players[object.id].bullets --;
             }
+            players[object.id].hp = object.hp;
+            players[object.id].sprite.setRotation(object.rotation);
+            players[object.id].sprite.setPosition(object.pos_x, object.pos_y);
         }
-        players[object.id].hp = object.hp;
-        players[object.id].sprite.setRotation(object.rotation);
-        players[object.id].sprite.setPosition(object.pos_x, object.pos_y);
     }
 }
 
@@ -446,7 +454,7 @@ void Map::check_collision_players_ammo(){
     while (it != dropped_ammo.end()){
         bool picked_up = false;
         auto &[amount, ammo] = *it;
-        /*for (auto &[id, player] : players){
+        for (auto &[id, player] : players){
             if(player.hp > 0){
                 if (collision(ammo, player.sprite, false, false)){
                     player.bullets += amount;
@@ -457,7 +465,7 @@ void Map::check_collision_players_ammo(){
                     break;
                 }
             }
-        }*/
+        }
 
         if (collision(ammo, main_player.sprite, false, false)){
             if(main_player.hp > 0){
@@ -533,7 +541,7 @@ void Map::check_collision_missiles_walls_players() {
                         if (player.hp <= 0) {
                             dropped_ammo_sprite.setPosition(player.sprite.getPosition());
                             dropped_ammo.emplace_back(player.bullets, dropped_ammo_sprite);
-                            std::cout << player.bullets <<  " bullets dropped\n";
+                            //std::cout << player.bullets <<  " bullets dropped\n";
                             if(missile.player_who_shot == &main_player)
                                 main_player.kills++;
                         }
@@ -563,10 +571,16 @@ void Map::check_collision_missiles_walls_players() {
     }
 }
 
+void Map::draw_floors(sf::RenderWindow &window) const {
+    window.draw(floors_sprite);
+}
+
 void Map::draw_walls(sf::RenderWindow &window) {
-    window.draw(unbreakable_walls_and_floors_sprite);
+    window.draw(unbreakable_walls_sprite);
     for (const auto& [id, wall]: walls_map) {window.draw(wall.sprite);}
 }
+
+
 
 void Map::draw_missiles(sf::RenderWindow &window) {
     for (const auto &missile: missiles) window.draw(missile.sprite);

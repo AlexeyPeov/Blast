@@ -3,6 +3,7 @@
 
 void Game::run() {
     auto frame_duration = std::chrono::milliseconds(1000 / 60);
+
     while (is_running) {
 
         if (mainMenu.menuState == MenuState::QUIT) {
@@ -101,7 +102,7 @@ void Game::run() {
                     }
                 }*/
 
-                if (event.key.code == sf::Keyboard::Key::G) {
+                /*if (event.key.code == sf::Keyboard::Key::G) {
                     //if (gameState == GameState::MAIN_MENU) {
                     gameState = GameState::IN_GAME;
                     gameMode = GameMode::DEATH_MATCH;
@@ -114,8 +115,8 @@ void Game::run() {
                         client.connect("127.0.0.1", 53000);
                     }
                 }
-
-                if (event.key.code == sf::Keyboard::Key::Q) {
+                */
+                /*if (event.key.code == sf::Keyboard::Key::Q) {
                     if (server.active) {
                         server.active = false;
                         std::cout << "Stopping server..\n";
@@ -124,7 +125,7 @@ void Game::run() {
                         client.active = false;
                         client.disconnect();
                     }
-                }
+                }*/
             }
 
             // Handle window resize
@@ -220,6 +221,20 @@ void Game::run() {
 
 
             //drawing
+
+            map.draw_floors(window);
+
+            // todo raycast
+//            sf::RenderTexture renderTexture;
+//            renderTexture.create(map.width * 40, map.height * 40);
+//            renderTexture.clear(sf::Color::Transparent);
+//            RayCaster::castRays(renderTexture, map.main_player.sprite.getPosition(), map.walls_for_collision_map);
+//            sf::Sprite visibleAreaSprite(renderTexture.getTexture());
+//            visibleAreaSprite.setScale(1.f, -1.f);
+//            visibleAreaSprite.setPosition(0.f, renderTexture.getSize().y);
+//            window.draw(visibleAreaSprite);
+
+
             map.draw_walls(window);
             map.draw_missiles(window);
             map.draw_players(window);
@@ -233,15 +248,6 @@ void Game::run() {
             if (gameState == GameState::IN_GAME_PAUSE) {
                // mainMenu.draw_in_pause(window, gameState);
             }
-
-           /* sf::RenderTexture renderTexture;
-            renderTexture.create(map.width * 40, map.height * 40);
-            renderTexture.clear(sf::Color::Transparent);
-            RayCaster::castRays(renderTexture, map.main_player.sprite.getPosition(), map.walls_for_collision_map);
-            sf::Sprite visibleAreaSprite(renderTexture.getTexture());
-            visibleAreaSprite.setScale(1.f, -1.f);
-            visibleAreaSprite.setPosition(0.f, renderTexture.getSize().y);
-            window.draw(visibleAreaSprite);*/
 
 
         }
@@ -369,9 +375,15 @@ void Game::death_match() {
 
 
             if (map.main_player.hp <= 0) {
+                map.main_player.sprite.setPosition(map.random_non_wall_position());
+                client.object.pos_x = map.main_player.sprite.getPosition().x;
+                client.object.pos_y = map.main_player.sprite.getPosition().y;
+
                 map.main_player.hp = 100;
                 map.main_player.bullets = 120;
-                map.main_player.sprite.setPosition(map.random_non_wall_position());
+
+                client.object.hp = 100;
+                client.object.bullets = 120;
             }
 
 

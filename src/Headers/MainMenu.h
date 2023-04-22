@@ -41,11 +41,12 @@ struct MainMenu {
     Map* map;
     VideoMode *gameVideoMode = nullptr;
     MultiplayerAction *multiplayerAction = nullptr;
+    GameMode *gameMode;
     Client *client = nullptr;
 
     MainMenu()= default;
 
-    MainMenu(sf::Font &font, VideoMode &gameVideoMode, Client &client, MultiplayerAction &multiplayerAction, Map &map) {
+    MainMenu(sf::Font &font, VideoMode &gameVideoMode, Client &client, MultiplayerAction &multiplayerAction, Map &map, GameMode& gameMode) {
         this->font = font;
 
         ipInput.init(font);
@@ -56,6 +57,7 @@ struct MainMenu {
         this->client = &client;
         this->multiplayerAction = &multiplayerAction;
         this->map = &map;
+        this->gameMode = &gameMode;
 
         menu_rect_in_game.setFillColor(sf::Color(128, 128, 128));
     }

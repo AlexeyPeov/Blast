@@ -21,6 +21,7 @@ struct Client {
     std::vector<Object> objects;
     Object object;
     bool active = false;
+    bool host = false;
 
     bool connect(std::string address, int port);
 
