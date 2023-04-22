@@ -8,13 +8,13 @@
 #include <thread>
 
 struct Resolution {
-    uint x = 1280;
-    uint y = 720;
+    uint32_t x = 1280;
+    uint32_t y = 720;
 };
 
 struct ViewSize {
-    uint x = 560;
-    uint y = 315;
+    uint32_t x = 560;
+    uint32_t y = 315;
 //    uint x = 430;
 //    uint y = 240;
 //    uint x = 1920;
@@ -38,7 +38,7 @@ private:
     sf::View view;
     Server server;
     Client client;
-    bool gained_focus = false;
+    bool gained_focus = true;
     bool is_running = true;
     GameState gameState = GameState::MAIN_MENU;
     MultiplayerAction multiplayerAction = MultiplayerAction::NOTHING;
