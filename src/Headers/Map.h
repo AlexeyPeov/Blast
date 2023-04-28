@@ -38,7 +38,8 @@ struct Map {
 
     sf::Texture wall_texture_5, wall_texture_4, wall_texture_3, wall_texture_2, wall_texture_1, wall_texture_unbreakable;
     sf::Texture floor_texture;
-    sf::Texture player_texture;
+    sf::Texture team1_player_texture;
+    sf::Texture team2_player_texture;
     sf::Texture explosion_texture;
     sf::Texture dropped_ammo_texture;
 
@@ -50,7 +51,8 @@ struct Map {
     sf::Sprite wall_sprite;
     sf::Sprite unbreakable_wall_sprite;
     sf::Sprite floor_sprite;
-    sf::Sprite player_sprite;
+    sf::Sprite team1_player_sprite;
+    sf::Sprite team2_player_sprite;
     sf::Sprite explosion_sprite;
     sf::Sprite missile_sprite;
     sf::Sprite dropped_ammo_sprite;
@@ -83,9 +85,9 @@ struct Map {
 
     void init_walls(short level);
 
-    void init_main_player();
+    void init_main_player(short team);
 
-    Player init_new_player(int id, float pos_x, float pos_y) const;
+    Player init_new_player(int id, float pos_x, float pos_y, short team) const;
 
     void init_explosion(Missile &missile);
 

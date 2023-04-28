@@ -8,7 +8,8 @@ std::string current_dir() {
 
 void Map::init_map_textures() {
 
-    this->player_texture.loadFromFile(current_dir() + "/textures/personStationary.png");
+    this->team1_player_texture.loadFromFile(current_dir() + "/textures/personStationary.png");
+    this->team2_player_texture.loadFromFile(current_dir() + "/textures/team2_player_image.png");
 
     this->wall_texture_unbreakable.loadFromFile(current_dir() + "/textures/unbreakableBorder.png");
     this->floor_texture.loadFromFile(current_dir() + "/textures/floor.png");
@@ -24,13 +25,15 @@ void Map::init_map_textures() {
     this->explosion_texture.loadFromFile(current_dir() + "/textures/explosion.png");
 
 
-    this->player_sprite = sf::Sprite(player_texture);
+    this->team1_player_sprite = sf::Sprite(team1_player_texture);
+    this->team2_player_sprite = sf::Sprite(team2_player_texture);
 
     this->missile_sprite = sf::Sprite(missile_texture);
 
     this->dropped_ammo_sprite.setTexture(dropped_ammo_texture);
     config_sprite(dropped_ammo_sprite);
     this->explosion_sprite = sf::Sprite(explosion_texture);
+
 
     this->wall_sprite = sf::Sprite(wall_texture_5);
     this->unbreakable_wall_sprite = sf::Sprite(wall_texture_unbreakable);
@@ -109,20 +112,30 @@ void Map::init_walls(short level) {
 
 }
 
-void Map::init_main_player() {
+void Map::init_main_player(short team) {
     float movement_speed = 2;
     float rotation_degree = 0;
     int hp = 100;
-    main_player = Player(player_sprite, movement_speed, rotation_degree, hp, 0);
+    sf::Sprite player_spr;
+    if(team == 1 ) {
+        main_player = Player(team1_player_sprite, movement_speed, rotation_degree, hp, 0);
+    } else {
+        main_player = Player(team2_player_sprite, movement_speed, rotation_degree, hp, 0);
+    }
     config_sprite(main_player.sprite);
     main_player.sprite.setPosition(random_non_wall_position());
 }
 
-Player Map::init_new_player(int id, float pos_x, float pos_y) const {
+Player Map::init_new_player(int id, float pos_x, float pos_y, short team) const {
     float movement_speed = 2;
     float rotation_degree = 0;
     int hp = 100;
-    Player player = Player(player_sprite, movement_speed, rotation_degree, hp, id);
+    Player player;
+    if(team == 1 ) {
+        player = Player(team1_player_sprite, movement_speed, rotation_degree, hp, id);
+    } else {
+        player = Player(team2_player_sprite, movement_speed, rotation_degree, hp, id);
+    }
     config_sprite(player.sprite);
     player.sprite.setPosition(pos_x, pos_y);
     return player;
@@ -261,7 +274,7 @@ void Map::update_players(Client &client) {
     for (auto &object: client.objects) {
 
         if (players.find(object.id) == players.end()) {
-            players[object.id] = init_new_player(object.id, object.pos_x, object.pos_y);
+            players[object.id] = init_new_player(object.id, object.pos_x, object.pos_y, object.team);
         }
         if (object.hp > 0) {
             bool is_shooting = object::is_shooting(object);
@@ -558,6 +571,7 @@ void Map::check_collision_missiles_walls_players() {
             for (auto &[id, player]: players) {
                 if (missile.player_who_shot != &player && player.hp > 0) {
                     if (collision(player.sprite, missile.sprite, wall_can_move, missile_can_move)) {
+                        std::cout << "pl_id:" << player.id << " misslePlId:" << missile.player_who_shot->id << "\n";
                         player.hp -= missile.damage;
                         missile.life = false;
 

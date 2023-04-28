@@ -25,7 +25,7 @@ bool Client::send_all_bytes(const void *data, std::size_t size, sf::TcpSocket &s
     while (total_sent < size) {
         std::size_t sent;
         if (sock.send(static_cast<const char *>(data) + total_sent, size - total_sent, sent) != sf::Socket::Done) {
-            if (++retries > 10) {
+            if (++retries > 50000) {
                 std::cerr << " : too many retries\n";
                 return false;
             }
@@ -44,7 +44,7 @@ bool Client::receive_all_bytes(void *data, std::size_t size, sf::TcpSocket &sock
         std::size_t received = 0;
         if (socket.receive(static_cast<char*>(data) + total_received, size - total_received, received) !=
             sf::Socket::Done) {
-            if (++retries > 300) {
+            if (++retries > 50000) {
                 std::cerr << "Error receiving data: too many retries\n";
                 return false;
             }

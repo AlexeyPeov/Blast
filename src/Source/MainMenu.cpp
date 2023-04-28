@@ -141,7 +141,7 @@ void MainMenu::drawSinglePlayerMenu(sf::RenderWindow &window) {
         if (Mouse::clicked()) {
             //map->init_map_textures();
             map->init_walls(map_chosen);
-            map->init_main_player();
+            map->init_main_player(client->object.team);
             menuState = MenuState::START;
             *map->gameState = GameState::IN_GAME;
         }
@@ -312,7 +312,7 @@ void MainMenu::drawMultiplayerLobby(sf::RenderWindow &window) {
         short m = object::which_map_is_chosen(client->object);
         short game_mode = object::which_game_mode_is_chosen(client->object);
         map->init_walls(m);
-        map->init_main_player();
+        map->init_main_player(client->object.team);
         menuState = MenuState::START;
         *map->gameState = GameState::IN_GAME;
         if(game_mode == 1){
