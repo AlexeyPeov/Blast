@@ -9,7 +9,7 @@
 struct Entity {
     sf::Sprite sprite;
     float movement_speed;
-    int rotation_degree;
+    float rotation_degree;
 
     void move(sf::Vector2f &mouse_position);
 

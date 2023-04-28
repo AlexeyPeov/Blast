@@ -15,10 +15,9 @@ struct Resolution {
 struct ViewSize {
     uint32_t x = 560;
     uint32_t y = 315;
-//    uint x = 430;
-//    uint y = 240;
-//    uint x = 1920;
-//    uint y = 1080;
+
+//    uint32_t x = 1280;
+//    uint32_t y = 720;
 
 };
 

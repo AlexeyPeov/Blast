@@ -25,7 +25,7 @@ bool Client::send_all_bytes(const void *data, std::size_t size, sf::TcpSocket &s
     while (total_sent < size) {
         std::size_t sent;
         if (sock.send(static_cast<const char *>(data) + total_sent, size - total_sent, sent) != sf::Socket::Done) {
-            if (++retries > 3) {
+            if (++retries > 10) {
                 std::cerr << " : too many retries\n";
                 return false;
             }
@@ -42,17 +42,23 @@ bool Client::receive_all_bytes(void *data, std::size_t size, sf::TcpSocket &sock
     int retries = 0;
     while (total_received < size) {
         std::size_t received = 0;
-        if (socket.receive(static_cast<char *>(data) + total_received, size - total_received, received) !=
+        if (socket.receive(static_cast<char*>(data) + total_received, size - total_received, received) !=
             sf::Socket::Done) {
-            if (++retries > 5) {
+            if (++retries > 300) {
                 std::cerr << "Error receiving data: too many retries\n";
                 return false;
             }
+            #ifdef SERVER_DEBUG
+            std::cout << "-" << retries;
+            #endif
             continue;
         }
         total_received += received;
         retries = 0;
     }
+    #ifdef SERVER_DEBUG
+    std::cout << "+";
+    #endif
     return true;
 }
 
@@ -61,21 +67,28 @@ void Client::receive_data() {
     if (active) {
         MessageType message_type;
         std::uint32_t data_size;
-        int buffer_length = max_players * sizeof(Object);
-        //char buffer[buffer_length];
 
         if (receive_all_bytes(&message_type, sizeof(message_type), socket)) {
             if (message_type == MessageType::ID) {
                 if (receive_all_bytes(&id, sizeof(id), socket)) {
                     this->object.id = id;
+                    this->object.tick = id;
                 } else {
                     std::cerr << "Error receiving id from server\n";
                 }
             } else if (message_type == MessageType::OBJECTS) {
+
                 if (receive_all_bytes(&data_size, sizeof(data_size), socket)) {
                     std::vector<char> buff(data_size);
                     if (receive_all_bytes(buff.data(), buff.size(), socket)) {
                         object::deserialize_objects(buff, this->objects);
+                        for(auto obj = objects.begin(); obj != objects.end();){
+                            if(obj->id == object.id){
+                                obj = objects.erase(obj);
+                            } else {
+                                obj++;
+                            }
+                        }
                     } else {
                         std::cerr << "Error receiving data from Server\n";
                     }
@@ -87,7 +100,6 @@ void Client::receive_data() {
                     objects.clear();
                 }
             }
-
         } else {
             std::cerr << "Error receiving message type from server\n";
         }
@@ -99,11 +111,12 @@ bool Client::send_data() {
         if (object.id != 0) {
             auto data = object::serialize_object(this->object);
             if (send_all_bytes(data.data(), data.size(), this->socket)) {
+                this->object.tick++;
                 return true;
+            } else {
+                std::cerr << "Error sending data to Server\n";
             }
-            std::cerr << "Error sending data to Server\n";
-            disconnect();
-            return false;
+            //disconnect();
         }
         return false;
     }

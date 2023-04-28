@@ -9,6 +9,7 @@
 #include "Animation.h"
 #include "Missile.h"
 #include "Enums.h"
+#include "Mouse.h"
 #include <unordered_set>
 
 #define IRRELEVANT_WALL 3
@@ -86,10 +87,6 @@ struct Map {
 
     Player init_new_player(int id, float pos_x, float pos_y) const;
 
-    void init_missile_as_connected_player(Player &player);
-
-    bool init_missile_as_main_player(Player &player);
-
     void init_explosion(Missile &missile);
 
     void update_walls();
@@ -102,7 +99,7 @@ struct Map {
 
     void update_players(Client &client);
 
-    void update_player();
+    void update_player(Client &client);
 
     void main_player_move(sf::View &view, sf::RenderWindow &window, Client &client, bool gained_focus, float deltaTime = 2.0);
 
@@ -131,4 +128,8 @@ struct Map {
     void update_wall(Wall &wall);
 
     void draw_floors(sf::RenderWindow &window) const;
+
+    void init_missile(Player &player, Object &object);
+
+    bool main_player_can_init_missile() const;
 };

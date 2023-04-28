@@ -12,7 +12,7 @@ const short nickname_length = 15;
 
 
 struct Object {
-    int id = 0;
+    uint64_t id = 0;
     char nickname[nickname_length] = "aboba";
     int hp = 0;
     int bullets = 120;
@@ -23,7 +23,10 @@ struct Object {
     float pos_y = 0;
     float rotation = 0;
     uint8_t action = 0;
+    uint64_t tick = 0;
 };
+
+
 
 
 namespace object {

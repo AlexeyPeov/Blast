@@ -9,12 +9,12 @@ struct Player : Entity {
     int hp = 0;
     int kills = 0;
     int deaths = 0;
-    int shootDelay = 40;
+    int shootDelay = 30;
     int timeSinceLastShot = 0;
     int bullets = 120;
 
     Player(){}
-    Player(sf::Sprite sprite, float movement_speed, int rotation_degree, int hp, int id)
+    Player(sf::Sprite sprite, float movement_speed, float rotation_degree, int hp, int id)
         : Entity{ std::move(sprite), movement_speed, rotation_degree}, hp{hp}, id{id}{}
 
 };

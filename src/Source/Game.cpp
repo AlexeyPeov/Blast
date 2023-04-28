@@ -100,23 +100,21 @@ void Game::run() {
                         //client.connect(mainMenu.ipInput.inputString, mainMenu.portInput.toInt());
                         client.connect("127.0.0.1", 53000);
                     }
-                }*/
+                }
 
-                /*if (event.key.code == sf::Keyboard::Key::G) {
+                if (event.key.code == sf::Keyboard::Key::G) {
                     //if (gameState == GameState::MAIN_MENU) {
                     gameState = GameState::IN_GAME;
                     gameMode = GameMode::DEATH_MATCH;
                     //}
                 }
-
                 if (event.key.code == sf::Keyboard::Key::C) {
                     if (!client.active) {
                         //client.connect(mainMenu.ipInput.inputString, mainMenu.portInput.toInt());
                         client.connect("127.0.0.1", 53000);
                     }
                 }
-                */
-                /*if (event.key.code == sf::Keyboard::Key::Q) {
+                if (event.key.code == sf::Keyboard::Key::Q) {
                     if (server.active) {
                         server.active = false;
                         std::cout << "Stopping server..\n";
@@ -182,6 +180,7 @@ void Game::run() {
 
                                windowSize = newWindowSize;
                            }*/
+
         }
 
         window.clear();
@@ -192,32 +191,28 @@ void Game::run() {
             client.receive_data();
         }
 
+
         if (gameState == GameState::MAIN_MENU) {
             mainMenu.draw(window);
-            map.main_player.hp = 100;
-        } else  {
+        }
+        else  {
 
             if (gameMode == GameMode::DEATH_MATCH) {
                 death_match();
             }
+            map.update_player(client);
             object::dont_shoot(client.object);
-
-
-            map.main_player_move(view, window, client, gained_focus);
 
             //update values
             map.update_players(client);
             map.update_missiles();
             map.update_explosions();
-            map.update_player();
 
             //collision
             map.check_collision_walls_players();
             map.check_collision_missiles_walls_players();
             map.check_collision_player_players();
             map.check_collision_players_ammo();
-
-
 
 
             //drawing
@@ -241,7 +236,7 @@ void Game::run() {
             map.draw_explosions(window);
             map.draw_dropped_ammo(window);
 
-
+            map.main_player_move(view, window, client, gained_focus);
             handleKeyBindings();
 
 
@@ -251,6 +246,7 @@ void Game::run() {
 
 
         }
+
         if (client.active) {
             client.send_data();
         }

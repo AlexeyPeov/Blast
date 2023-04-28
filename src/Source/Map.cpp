@@ -80,7 +80,7 @@ void Map::init_walls(short level) {
             walls_for_collision_map[sf::Vector2f(x, y)] = wall;
             unbreakable_walls_texture.draw(wall.sprite);
         } else if (arr[position] == WALL) {
-            wall = {.sprite = wall_sprite, .hp = 15};
+            wall = {.sprite = wall_sprite, .hp = 5};
             wall.sprite.setPosition(x, y);
             config_sprite(wall.sprite);
             walls_for_collision_map[sf::Vector2f(x, y)] = wall;
@@ -111,7 +111,7 @@ void Map::init_walls(short level) {
 
 void Map::init_main_player() {
     float movement_speed = 2;
-    int rotation_degree = 0;
+    float rotation_degree = 0;
     int hp = 100;
     main_player = Player(player_sprite, movement_speed, rotation_degree, hp, 0);
     config_sprite(main_player.sprite);
@@ -120,7 +120,7 @@ void Map::init_main_player() {
 
 Player Map::init_new_player(int id, float pos_x, float pos_y) const {
     float movement_speed = 2;
-    int rotation_degree = 0;
+    float rotation_degree = 0;
     int hp = 100;
     Player player = Player(player_sprite, movement_speed, rotation_degree, hp, id);
     config_sprite(player.sprite);
@@ -128,48 +128,34 @@ Player Map::init_new_player(int id, float pos_x, float pos_y) const {
     return player;
 }
 
-void Map::init_missile_as_connected_player(Player &player) {
-    int movement_speed = 40;
-    int rotation_degree = player.rotation_degree;
-    Missile missile = Missile(missile_sprite, movement_speed, rotation_degree);
-    missile.player_who_shot = &player;
 
-    config_sprite(missile.sprite);
-
-    missile.sprite.setRotation(player.sprite.getRotation());
-
-    float xToRad = missile.sprite.getRotation() * M_PI / 180;
-    float dx = 10 * sin(xToRad);
-    float dy = 10 * cos(xToRad);
-    missile.sprite.setPosition(player.sprite.getPosition().x + dx, player.sprite.getPosition().y - dy);
-
-    player.timeSinceLastShot = 0;
-    missiles.push_back(missile);
-}
-
-bool Map::init_missile_as_main_player(Player &player){
-    if (player.timeSinceLastShot > player.shootDelay && player.bullets > 0) {
-        int movement_speed = 40;
-        int rotation_degree = player.rotation_degree;
-        Missile missile = Missile(missile_sprite, movement_speed, rotation_degree);
-        missile.player_who_shot = &player;
-
-        config_sprite(missile.sprite);
-
-        missile.sprite.setRotation(player.sprite.getRotation());
-
-        float xToRad = missile.sprite.getRotation() * M_PI / 180;
-        float dx = 10 * sin(xToRad);
-        float dy = 10 * cos(xToRad);
-        missile.sprite.setPosition(player.sprite.getPosition().x + dx, player.sprite.getPosition().y - dy);
-
-        player.timeSinceLastShot = 0;
-        player.bullets--;
-        missiles.push_back(missile);
+bool Map::main_player_can_init_missile() const{
+    if (main_player.timeSinceLastShot > main_player.shootDelay && main_player.bullets > 0) {
         return true;
     }
     return false;
 }
+
+void Map::init_missile(Player &player, Object &object) {
+    int movement_speed = 40;
+    float rotation_degree = object.rotation;
+
+    missile_sprite.setRotation(rotation_degree);
+    float xToRad = missile_sprite.getRotation() * M_PI / 180;
+    float dx = 10 * sin(xToRad);
+    float dy = 10 * cos(xToRad);
+
+    missile_sprite.setPosition(object.pos_x + dx, object.pos_y - dy);
+    Missile missile = Missile(missile_sprite, movement_speed, rotation_degree);
+    missile.previousPosition = {object.pos_x, object.pos_y};
+    missile.player_who_shot = &player;
+
+    config_sprite(missile_sprite);
+    player.timeSinceLastShot = 0;
+    player.bullets--;
+    missiles.push_back(missile);
+}
+
 
 void Map::init_explosion(Missile &missile) {
     Animation explosion = Animation(explosion_sprite, 680 / 17, 40, 17, 2);
@@ -255,21 +241,6 @@ void Map::update_explosions() {
 
 void Map::update_players(Client &client) {
 
-    /*
-     * check if there are new connected players
-     *
-     *      if client.objects.size() > players.size()
-     *          players[id] = client.object;
-     *
-     *
-     *
-     * check if there are players that disconnected
-     *        if client.objects.size() < players.size()
-     *              delete the player that is not present
-     *
-     *
-     *
-     * */
     if (client.objects.size() < players.size()) {
         for (auto player = players.begin(); player != players.end();) {
             bool found = false;
@@ -296,7 +267,7 @@ void Map::update_players(Client &client) {
             bool is_shooting = object::is_shooting(object);
             if (is_shooting) {
                 //std::cout << "OTHER PLAYER SHOOTIN\n";
-                init_missile_as_connected_player(players[object.id]);
+                init_missile(players[object.id], object);
                 players[object.id].bullets --;
             }
             players[object.id].hp = object.hp;
@@ -306,8 +277,11 @@ void Map::update_players(Client &client) {
     }
 }
 
-void Map::update_player() {
+void Map::update_player(Client &client) {
     if (main_player.hp > 0) {
+        if(object::is_shooting(client.object)){
+            init_missile(main_player, client.object);
+        }
         main_player.timeSinceLastShot += 1;
     }
 }
@@ -374,7 +348,7 @@ void Map::main_player_move(sf::View &view, sf::RenderWindow &window, Client &cli
         if (gained_focus && *gameState == GameState::IN_GAME) {
             main_player.move(worldMousePos);
             if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
-                if (init_missile_as_main_player(main_player)) {
+                if (main_player_can_init_missile()) {
                     std::cout << "MAIN PLAYER INIT MISSILE\n";
                     object::shoot(client.object);
                 }
@@ -455,7 +429,7 @@ void Map::check_collision_players_ammo(){
         bool picked_up = false;
         auto &[amount, ammo] = *it;
         for (auto &[id, player] : players){
-            if(player.hp > 0){
+            if(player.hp > 0 && player.sprite.getPosition() != ammo.getPosition()){
                 if (collision(ammo, player.sprite, false, false)){
                     player.bullets += amount;
                     if (player.bullets > max_bullets){
@@ -488,7 +462,6 @@ void Map::check_collision_players_ammo(){
 }
 
 void Map::check_collision_missiles_walls_players() {
-
     for (auto &missile: missiles) {
 
         sf::Vector2f missileDisplacement = missile.sprite.getPosition() - missile.previousPosition;
@@ -497,14 +470,64 @@ void Map::check_collision_missiles_walls_players() {
         int wall_can_move = false;
         int missile_can_move = true;
 
+
+        /*// new
+        float x = missile.sprite.getPosition().x;
+        float y = missile.sprite.getPosition().y;
+        sf::Vector2f theoretical_wall_pos = sf::Vector2f((((int)x) / 40) * 40 + 20, (((int)y) / 40) * 40 + 20);
+        if (walls_for_collision_map.count(theoretical_wall_pos) > 0) {
+            if(walls_map.count(theoretical_wall_pos) > 0){
+                mn++;
+                std::cout << "|mn" << mn << "," <<   x << "," << y << "|&wpos:" << theoretical_wall_pos.x << "," << theoretical_wall_pos.y << "|\n";
+                walls_map[theoretical_wall_pos].hp--;
+                update_wall(walls_map[theoretical_wall_pos]);
+            }
+            missile.life = false;
+            init_explosion(missile);
+        }
+
+        for (auto &[id, player]: players) {
+            if (missile.player_who_shot != &player && player.hp > 0) {
+                if (collision(player.sprite, missile.sprite, wall_can_move, missile_can_move)) {
+                    player.hp -= missile.damage;
+                    missile.life = false;
+
+                    if (player.hp <= 0) {
+                        dropped_ammo_sprite.setPosition(player.sprite.getPosition());
+                        dropped_ammo.emplace_back(player.bullets, dropped_ammo_sprite);
+                        //std::cout << player.bullets <<  " bullets dropped\n";
+                        if(missile.player_who_shot == &main_player)
+                            main_player.kills++;
+                    }
+
+                    init_explosion(missile);
+                }
+            }
+        }
+        if (missile.player_who_shot != &main_player && main_player.hp > 0) {
+            if (collision(main_player.sprite, missile.sprite, wall_can_move, missile_can_move)) {
+                main_player.hp -= missile.damage;
+                missile.life = false;
+
+                if (main_player.hp <= 0) {
+                    dropped_ammo_sprite.setPosition(main_player.sprite.getPosition());
+                    dropped_ammo.emplace_back(main_player.bullets, dropped_ammo_sprite);
+                    main_player.deaths++;
+                }
+                init_explosion(missile);
+            }
+        }*/
+
+
+
         for (int i = 1; i <= steps; ++i) {
             if (!missile.life) break;
             float t = static_cast<float>(i) / steps;
 
             missile.sprite.setPosition(missile.previousPosition + missileDisplacement * t);
-            int x = missile.sprite.getPosition().x;
-            int y = missile.sprite.getPosition().y;
-            sf::Vector2f theoretical_wall_pos = sf::Vector2f((x / 40) * 40 + 20, (y / 40) * 40 + 20);
+            float x = missile.sprite.getPosition().x;
+            float y = missile.sprite.getPosition().y;
+            sf::Vector2f theoretical_wall_pos = sf::Vector2f((((int)x) / 40) * 40 + 20, (((int)y) / 40) * 40 + 20);
             if (walls_for_collision_map.count(theoretical_wall_pos) > 0) {
                 if(walls_map.count(theoretical_wall_pos) > 0){
                     walls_map[theoretical_wall_pos].hp--;
@@ -514,23 +537,23 @@ void Map::check_collision_missiles_walls_players() {
                 init_explosion(missile);
             }
 
-           /* for (auto &wall: walls) {
-                if (collision(wall.sprite, missile.sprite, wall_can_move, missile_can_move)) {
-                    wall.hp -= 1;
-                    missile.life = false;
-                    init_explosion(missile);
-                    break;
-                }
-            }
-
-            for (auto &wall: unbreakable_walls) {
-                if (collision(wall.sprite, missile.sprite, wall_can_move, missile_can_move)) {
-                    wall.hp -= 1;
-                    missile.life = false;
-                    init_explosion(missile);
-                    break;
-                }
-            }*/
+//            for (auto &wall: walls) {
+//                if (collision(wall.sprite, missile.sprite, wall_can_move, missile_can_move)) {
+//                    wall.hp -= 1;
+//                    missile.life = false;
+//                    init_explosion(missile);
+//                    break;
+//                }
+//            }
+//
+//            for (auto &wall: unbreakable_walls) {
+//                if (collision(wall.sprite, missile.sprite, wall_can_move, missile_can_move)) {
+//                    wall.hp -= 1;
+//                    missile.life = false;
+//                    init_explosion(missile);
+//                    break;
+//                }
+//            }
 
             for (auto &[id, player]: players) {
                 if (missile.player_who_shot != &player && player.hp > 0) {

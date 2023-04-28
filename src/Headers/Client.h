@@ -8,6 +8,7 @@
 
 enum class MessageType {
     ID,
+    TICK,
     OBJECTS,
     EMPTY,
 };
@@ -16,12 +17,13 @@ const size_t max_players = 24;
 
 struct Client {
 
-    int id = 0;
+    uint64_t id = 0;
     sf::TcpSocket socket;
     std::vector<Object> objects;
     Object object;
     bool active = false;
     bool host = false;
+    bool freeze = false;
 
     bool connect(std::string address, int port);
 
