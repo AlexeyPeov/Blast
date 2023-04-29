@@ -37,13 +37,17 @@ bool Client::send_all_bytes(const void *data, std::size_t size, sf::TcpSocket &s
     return true;
 }
 
-bool Client::receive_all_bytes(void *data, std::size_t size, sf::TcpSocket &socket) {
+bool Client::receive_all_bytes(void *data, std::size_t size) {
     std::size_t total_received = 0;
     int retries = 0;
     while (total_received < size) {
         std::size_t received = 0;
-        if (socket.receive(static_cast<char*>(data) + total_received, size - total_received, received) !=
-            sf::Socket::Done) {
+        auto status = socket.receive(static_cast<char*>(data) + total_received, size - total_received, received);
+        if (status != sf::Socket::Done) {
+            if (status == sf::Socket::Disconnected) {
+                disconnect();
+                return true;
+            }
             if (++retries > 50000) {
                 std::cerr << "Error receiving data: too many retries\n";
                 return false;
@@ -68,9 +72,9 @@ void Client::receive_data() {
         MessageType message_type;
         std::uint32_t data_size;
 
-        if (receive_all_bytes(&message_type, sizeof(message_type), socket)) {
+        if (receive_all_bytes(&message_type, sizeof(message_type))) {
             if (message_type == MessageType::ID) {
-                if (receive_all_bytes(&id, sizeof(id), socket)) {
+                if (receive_all_bytes(&id, sizeof(id))) {
                     this->object.id = id;
                     this->object.tick = id;
                 } else {
@@ -78,9 +82,9 @@ void Client::receive_data() {
                 }
             } else if (message_type == MessageType::OBJECTS) {
 
-                if (receive_all_bytes(&data_size, sizeof(data_size), socket)) {
+                if (receive_all_bytes(&data_size, sizeof(data_size))) {
                     std::vector<char> buff(data_size);
-                    if (receive_all_bytes(buff.data(), buff.size(), socket)) {
+                    if (receive_all_bytes(buff.data(), buff.size())) {
                         object::deserialize_objects(buff, this->objects);
                         for(auto obj = objects.begin(); obj != objects.end();){
                             if(obj->id == object.id){

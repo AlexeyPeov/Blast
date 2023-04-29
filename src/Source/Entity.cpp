@@ -7,12 +7,14 @@
 
 void Entity::move(sf::Vector2f &mouse_position) {
 
-    float angle =
-            (atan2(mouse_position.y - this->sprite.getPosition().y,
-                  mouse_position.x - this->sprite.getPosition().x
-                  ) * 180 / M_PI) + 90;
-    this->sprite.setRotation(angle);
+    //if(sf::Mouse::isButtonPressed(sf::Mouse::Right)){
+        float angle =
+                (atan2(mouse_position.y - this->sprite.getPosition().y,
+                       mouse_position.x - this->sprite.getPosition().x
+                ) * 180 / M_PI) + 90;
+        this->sprite.setRotation(angle);
 
+  //  }
     // Move sprite based on keyboard input
     sf::Vector2f movement = {0,0};
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {

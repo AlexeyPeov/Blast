@@ -13,8 +13,8 @@ struct Resolution {
 };
 
 struct ViewSize {
-    uint32_t x = 560;
-    uint32_t y = 315;
+    uint32_t x = 1120;
+    uint32_t y = 630;
 
 //    uint32_t x = 1280;
 //    uint32_t y = 720;
@@ -48,7 +48,7 @@ private:
 
 public:
     Game() : desktop(sf::VideoMode::getDesktopMode()),
-             window(sf::VideoMode(800, 600), "Blast", sf::Style::Titlebar | sf::Style::Close){
+             window(sf::VideoMode(700, 500), "Blast", sf::Style::Titlebar | sf::Style::Close){
         //sf::VideoMode(1600, 800), "Blast", sf::Style::Titlebar | sf::Style::Close
         //window(desktop, "Blast", sf::Style::Fullscreen),
         view = sf::View(sf::FloatRect(0, 0, viewSize.x, viewSize.y));

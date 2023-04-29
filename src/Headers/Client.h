@@ -31,7 +31,7 @@ struct Client {
 
     static bool send_all_bytes(const void* data, std::size_t size, sf::TcpSocket &sock);
 
-    static bool receive_all_bytes(void* data, std::size_t size, sf::TcpSocket &socket);
+    bool receive_all_bytes(void* data, std::size_t size);
 
     void receive_data();
 

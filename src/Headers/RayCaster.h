@@ -15,10 +15,6 @@ namespace RayCaster {
     float distanceToScene(sf::Vector2f point, std::unordered_map<sf::Vector2f, Wall, Vector2fHash> &walls);
 
     void castRays(sf::RenderTexture &renderTexture, const sf::Vector2f &playerPos,
-                  std::unordered_map<sf::Vector2f, Wall, Vector2fHash> &walls);
-
-
-
-
+                  std::unordered_map<sf::Vector2f, Wall, Vector2fHash> &walls, float player_angle);
 
 }

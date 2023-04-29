@@ -1,46 +1,5 @@
 #include "../Headers/RayCaster.h"
 
-const char *blur_shader_code = R"(
-            uniform sampler2D texture;
-uniform vec2 texSize;
-uniform float blurRadius;
-
-const int MAX_SAMPLES = 20;
-
-void main() {
-    vec2 texCoord = gl_TexCoord[0].xy;
-    vec4 color = vec4(0.0);
-
-    // Calculate the number of pixels to sample
-    int sampleCount = int(blurRadius * 2.0 + 1.0);
-    sampleCount = min(sampleCount, MAX_SAMPLES);
-
-    // Calculate the weights for each pixel
-    float sigma = blurRadius / 2.0;
-    float weightSum = 0.0;
-    float weights[MAX_SAMPLES];
-    for (int i = 0; i < sampleCount; i++) {
-        float x = float(i) - blurRadius;
-        weights[i] = exp(-(x * x) / (2.0 * sigma * sigma));
-        weightSum += weights[i];
-    }
-
-    // Normalize the weights
-    for (int i = 0; i < sampleCount; i++) {
-        weights[i] /= weightSum;
-    }
-
-    // Sample the pixels and apply the weights
-    for (int i = 0; i < sampleCount; i++) {
-        float x = float(i) - blurRadius;
-        vec2 offset = vec2(x / texSize.x, 0.0);
-        color += texture2D(texture, texCoord + offset) * weights[i];
-    }
-
-    gl_FragColor = color;
-}
-)";
-
 namespace RayCaster {
 
 
@@ -57,20 +16,8 @@ namespace RayCaster {
     }
 
     void castRays(sf::RenderTexture &renderTexture, const sf::Vector2f &playerPos,
-                  std::unordered_map<sf::Vector2f, Wall, Vector2fHash> &walls) {
-//        sf::Shader blurShader;
-//        if (!blurShader.loadFromMemory(blur_shader_code, sf::Shader::Fragment)) {
-//            // Handle error
-//        }
-//
-//        blurShader.setUniform("texture", renderTexture.getTexture());
-//        blurShader.setUniform("texSize", sf::Vector2f(renderTexture.getSize()));
-//        blurShader.setUniform("blurRadius", 2.f);
+                  std::unordered_map<sf::Vector2f, Wall, Vector2fHash> &walls, float player_angle) {
 
-        sf::Shader blurShader;
-        if (!blurShader.loadFromMemory(blur_shader_code, sf::Shader::Fragment)) {
-            std::cerr << "DIDNT OPEN THE SHADER\n";
-        }
         sf::RenderStates render;
         render.blendMode = sf::BlendNone;
 
@@ -79,7 +26,7 @@ namespace RayCaster {
 
 
         for (int i = 0; i < num_rays; i++) {
-            float angle = static_cast<float>(i) / num_rays * 360.f;
+            float angle = player_angle + static_cast<float>(i) / num_rays * 135.f;
             float dx = cos(angle * PI / 180.f);
             float dy = sin(angle * PI / 180.f);
 
@@ -103,13 +50,13 @@ namespace RayCaster {
 //                    sf::Vertex(playerPos),
 //                    sf::Vertex(rayPos)
 //            };
-//            line[0].color = sf::Color(255, 255, 255, 35);
-//            line[1].color = sf::Color(255, 255, 255, 55);
+//            line[0].color = sf::Color(255, 255, 255, 100);
+//            line[1].color = sf::Color(255, 255, 255, 100);
 //            renderTexture.draw(line, 2, sf::Lines);
             sf::Vector2f lineVector = sf::Vector2f(rayPos.x + dx * 5, rayPos.y + dy * 5) - playerPos;
             float lineLength = std::sqrt(lineVector.x * lineVector.x + lineVector.y * lineVector.y);
 
-            sf::RectangleShape line(sf::Vector2f(lineLength, 2));
+            sf::RectangleShape line(sf::Vector2f(lineLength, 5));
 
             line.setPosition(playerPos);
             line.setRotation(angle);

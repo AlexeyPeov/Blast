@@ -12,7 +12,7 @@ void Map::init_map_textures() {
     this->team2_player_texture.loadFromFile(current_dir() + "/textures/team2_player_image.png");
 
     this->wall_texture_unbreakable.loadFromFile(current_dir() + "/textures/unbreakableBorder.png");
-    this->floor_texture.loadFromFile(current_dir() + "/textures/floor.png");
+    this->floor_texture.loadFromFile(current_dir() + "/textures/floor_new.png");
     this->wall_texture_5.loadFromFile(current_dir() + "/textures/border5.png");
     this->wall_texture_4.loadFromFile(current_dir() + "/textures/border4.png");
     this->wall_texture_3.loadFromFile(current_dir() + "/textures/border3.png");
@@ -105,6 +105,7 @@ void Map::init_walls(short level) {
 
     unbreakable_walls_sprite.setTexture(unbreakable_walls_texture.getTexture());
     floors_sprite.setTexture(floors_texture.getTexture());
+    floors_sprite.setColor(sf::Color(255,255,255,50));
     //std::cout << unbreakable_walls_and_floors_sprite.getPosition().x << " " <<  unbreakable_walls_and_floors_sprite.getPosition().y << "\n";
     //unbreakable_walls_and_floors_sprite.setPosition(0.f, unbreakable_walls_and_floors_texture.getSize().y);
     //unbreakable_walls_and_floors_sprite.setScale(1.f, -1.f);
@@ -609,7 +610,9 @@ void Map::check_collision_missiles_walls_players() {
 }
 
 void Map::draw_floors(sf::RenderWindow &window) const {
-    window.draw(floors_sprite);
+    sf::RenderStates states;
+    states.blendMode = sf::BlendAlpha;
+    window.draw(floors_sprite, states);
 }
 
 void Map::draw_walls(sf::RenderWindow &window) {
@@ -632,9 +635,6 @@ void Map::draw_players(sf::RenderWindow &window) {
         if (player.hp > 0) {
             window.draw(player.sprite);
         }
-    }
-    if (main_player.hp > 0) {
-        window.draw(main_player.sprite);
     }
 }
 

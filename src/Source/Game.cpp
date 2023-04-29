@@ -124,6 +124,22 @@ void Game::run() {
                         client.disconnect();
                     }
                 }*/
+                if (event.key.code == sf::Keyboard::Key::C) {
+                    if (!client.active) {
+                        //client.connect(mainMenu.ipInput.inputString, mainMenu.portInput.toInt());
+                        client.connect("127.0.0.1", 53000);
+                    }
+                }
+                if (event.key.code == sf::Keyboard::Key::Q) {
+                    if (server.active) {
+                        server.active = false;
+                        std::cout << "Stopping server..\n";
+                    }
+                    if (client.active) {
+                        client.active = false;
+                        client.disconnect();
+                    }
+                }
             }
 
             // Handle window resize
@@ -217,24 +233,46 @@ void Game::run() {
 
             //drawing
 
+
+            map.draw_players(window);
+            // todo raycast
+            sf::RenderTexture renderTexture;
+            renderTexture.create(map.width * 40, map.height * 40);
+            renderTexture.clear(sf::Color::Transparent);
+            RayCaster::castRays(renderTexture, map.main_player.sprite.getPosition(), map.walls_for_collision_map, map.main_player.sprite.getRotation() - 157.5);
+
+
+            sf::Sprite visibleAreaSprite(renderTexture.getTexture());
+            visibleAreaSprite.setScale(1.f, -1.f);
+            visibleAreaSprite.setPosition(0.f, renderTexture.getSize().y);
+
+            sf::Shader shader;
+            if (!shader.loadFromFile(current_dir() + "/shaders/invert_colors.frag", sf::Shader::Fragment)) {
+                std::cerr << "Failed to load shader\n";
+            }
+            shader.setUniform("texture", sf::Shader::CurrentTexture);
+            window.draw(visibleAreaSprite, &shader);
             map.draw_floors(window);
 
-            // todo raycast
-//            sf::RenderTexture renderTexture;
-//            renderTexture.create(map.width * 40, map.height * 40);
-//            renderTexture.clear(sf::Color::Transparent);
-//            RayCaster::castRays(renderTexture, map.main_player.sprite.getPosition(), map.walls_for_collision_map);
-//            sf::Sprite visibleAreaSprite(renderTexture.getTexture());
-//            visibleAreaSprite.setScale(1.f, -1.f);
-//            visibleAreaSprite.setPosition(0.f, renderTexture.getSize().y);
-//            window.draw(visibleAreaSprite);
-
+            if (map.main_player.hp > 0) {
+                window.draw(map.main_player.sprite);
+            }
 
             map.draw_walls(window);
             map.draw_missiles(window);
-            map.draw_players(window);
             map.draw_explosions(window);
             map.draw_dropped_ammo(window);
+
+
+//            sf::RenderTexture black_overlay;
+//            black_overlay.create(map.width * 40, map.height * 40);
+//            black_overlay.clear(sf::Color(0,0,0,25));
+//            sf::Sprite visibleAreaSprite(black_overlay.getTexture());
+//            visibleAreaSprite.setScale(1.f, -1.f);
+//            visibleAreaSprite.setPosition(0.f, black_overlay.getSize().y);
+//            window.draw(visibleAreaSprite);
+
+
 
             map.main_player_move(view, window, client, gained_focus);
             handleKeyBindings();
