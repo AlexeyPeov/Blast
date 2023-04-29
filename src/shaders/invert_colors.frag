@@ -6,14 +6,14 @@ void main() {
 
     // If the pixel is transparent, set its color to black
     if (color.a == 0.0) {
-        color = vec4(0.0, 0.0, 0.0, 0.4);
+        color = vec4(0.0, 0.0, 0.0, 1);
     }
     // If the pixel is black, set its alpha value to 0 to make it transparent
     //    else if (color.r == 0.0 && color.g == 0.0 && color.b == 0.0) {
     //        color.a = 0.0;
     //    }
     else {
-        color.a = 0.0;
+        color = vec4(1.0, 1.0, 1.0, 0.1);
     }
 
 

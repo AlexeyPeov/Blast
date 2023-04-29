@@ -11,7 +11,7 @@ struct Entity {
     float movement_speed;
     float rotation_degree;
 
-    void move(sf::Vector2f &mouse_position);
+    bool move(sf::Vector2f &mouse_position);
 
 };
 

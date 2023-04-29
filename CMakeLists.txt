@@ -103,6 +103,7 @@ set(SFML_DIR "${CMAKE_CURRENT_SOURCE_DIR}/SFML-2.5.1_windows_MinGW64bit/lib/cmak
 find_package(SFML 2.5 COMPONENTS graphics window system REQUIRED)
 
 set_target_properties(sfml-graphics PROPERTIES IMPORTED_IMPLIB "${CMAKE_CURRENT_SOURCE_DIR}/SFML-2.5.1_windows_MinGW64bit/lib/sfml-graphics.lib")
+set_target_properties(sfml-audio PROPERTIES IMPORTED_IMPLIB "${CMAKE_CURRENT_SOURCE_DIR}/SFML-2.5.1_windows_MinGW64bit/lib/sfml-audio.lib")
 set_target_properties(sfml-window PROPERTIES IMPORTED_IMPLIB "${CMAKE_CURRENT_SOURCE_DIR}/SFML-2.5.1_windows_MinGW64bit/lib/sfml-window.lib")
 set_target_properties(sfml-system PROPERTIES IMPORTED_IMPLIB "${CMAKE_CURRENT_SOURCE_DIR}/SFML-2.5.1_windows_MinGW64bit/lib/sfml-system.lib")
 set_target_properties(sfml-network PROPERTIES IMPORTED_IMPLIB "${CMAKE_CURRENT_SOURCE_DIR}/SFML-2.5.1_windows_MinGW64bit/lib/sfml-network.lib")
@@ -132,7 +133,7 @@ if(WIN32)
             $<TARGET_FILE_DIR:BLAST>)
 endif()
 
-target_link_libraries(BLAST PRIVATE sfml-graphics sfml-window sfml-system sfml-network)
+target_link_libraries(BLAST PRIVATE sfml-graphics sfml-window sfml-system sfml-network sfml-audio)
 
 
 

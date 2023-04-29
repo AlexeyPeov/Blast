@@ -42,6 +42,29 @@ void Map::init_map_textures() {
     explosion_sprite.setOrigin(40.f / 2.f, (float) explosion_sprite.getTexture()->getSize().y / 2.f);
 }
 
+void Map::init_map_sounds(){
+
+    if (!gun_reload_buffer.loadFromFile(current_dir() + "/sounds/gun_reload.wav")) {
+        std::cerr << "failed to load reload sound\n";
+    }
+
+    if (!single_shot_buffer.loadFromFile(current_dir() + "/sounds/shot.wav")) {
+        std::cerr << "failed to load shot sound\n";
+    }
+
+    if (!walking_buffer.loadFromFile(current_dir() + "/sounds/walking_sound.wav")) {
+        std::cerr << "failed to load walking sound\n";
+    }
+
+    gun_reload_sound.setBuffer(gun_reload_buffer);
+    single_shot_sound.setBuffer(single_shot_buffer);
+    walking_sound.setBuffer(walking_buffer);
+
+    gun_reload_sound.setVolume(60.f);
+
+    walking_sound.setLoop(true);
+}
+
 void Map::init_walls(short level) {
 
     available_dm_spawn_positions.clear();
@@ -143,14 +166,9 @@ Player Map::init_new_player(int id, float pos_x, float pos_y, short team) const 
 }
 
 
-bool Map::main_player_can_init_missile() const{
-    if (main_player.timeSinceLastShot > main_player.shootDelay && main_player.bullets > 0) {
-        return true;
-    }
-    return false;
-}
 
 void Map::init_missile(Player &player, Object &object) {
+    single_shot_sound.play();
     int movement_speed = 40;
     float rotation_degree = object.rotation;
 
@@ -166,7 +184,7 @@ void Map::init_missile(Player &player, Object &object) {
 
     config_sprite(missile_sprite);
     player.timeSinceLastShot = 0;
-    player.bullets--;
+    player.mag_ammo--;
     missiles.push_back(missile);
 }
 
@@ -282,7 +300,7 @@ void Map::update_players(Client &client) {
             if (is_shooting) {
                 //std::cout << "OTHER PLAYER SHOOTIN\n";
                 init_missile(players[object.id], object);
-                players[object.id].bullets --;
+                players[object.id].mag_ammo --;
             }
             players[object.id].hp = object.hp;
             players[object.id].sprite.setRotation(object.rotation);
@@ -297,6 +315,13 @@ void Map::update_player(Client &client) {
             init_missile(main_player, client.object);
         }
         main_player.timeSinceLastShot += 1;
+        if (main_player.if_wants_or_needs_to_reload()){
+            gun_reload_sound.play();
+        }
+        if(main_player.reloading){
+            main_player.reload_process++;
+            main_player.reload();
+        }
     }
 }
 
@@ -360,9 +385,14 @@ void Map::main_player_move(sf::View &view, sf::RenderWindow &window, Client &cli
     }
     if (main_player.hp > 0) {
         if (gained_focus && *gameState == GameState::IN_GAME) {
-            main_player.move(worldMousePos);
+            if (main_player.move(worldMousePos)){
+                walking_sound.setVolume(60);
+            } else {
+                walking_sound.setVolume(0);
+                walking_sound.play();
+            }
             if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
-                if (main_player_can_init_missile()) {
+                if (main_player.can_shoot()) {
                     std::cout << "MAIN PLAYER INIT MISSILE\n";
                     object::shoot(client.object);
                 }
@@ -372,7 +402,7 @@ void Map::main_player_move(sf::View &view, sf::RenderWindow &window, Client &cli
         client.object.pos_y = main_player.sprite.getPosition().y;
         client.object.rotation = main_player.sprite.getRotation();
     }
-    client.object.bullets = main_player.bullets;
+    client.object.bullets = main_player.mag_ammo + main_player.leftover_ammo;
     client.object.hp = main_player.hp;
     client.object.kills = main_player.kills;
     client.object.deaths = main_player.deaths;
@@ -445,9 +475,9 @@ void Map::check_collision_players_ammo(){
         for (auto &[id, player] : players){
             if(player.hp > 0 && player.sprite.getPosition() != ammo.getPosition()){
                 if (collision(ammo, player.sprite, false, false)){
-                    player.bullets += amount;
-                    if (player.bullets > max_bullets){
-                        player.bullets = max_bullets;
+                    player.leftover_ammo += amount;
+                    if (player.leftover_ammo > max_ammo){
+                        player.leftover_ammo = max_ammo;
                     }
                     picked_up = true;
                     break;
@@ -457,9 +487,9 @@ void Map::check_collision_players_ammo(){
 
         if (collision(ammo, main_player.sprite, false, false)){
             if(main_player.hp > 0){
-                main_player.bullets += amount;
-                if (main_player.bullets > max_bullets){
-                    main_player.bullets = max_bullets;
+                main_player.leftover_ammo += amount;
+                if (main_player.leftover_ammo > max_ammo){
+                    main_player.leftover_ammo = max_ammo;
                 }
                 picked_up = true;
             }
@@ -578,7 +608,7 @@ void Map::check_collision_missiles_walls_players() {
 
                         if (player.hp <= 0) {
                             dropped_ammo_sprite.setPosition(player.sprite.getPosition());
-                            dropped_ammo.emplace_back(player.bullets, dropped_ammo_sprite);
+                            dropped_ammo.emplace_back(player.leftover_ammo, dropped_ammo_sprite);
                             //std::cout << player.bullets <<  " bullets dropped\n";
                             if(missile.player_who_shot == &main_player)
                                 main_player.kills++;
@@ -596,7 +626,7 @@ void Map::check_collision_missiles_walls_players() {
 
                     if (main_player.hp <= 0) {
                         dropped_ammo_sprite.setPosition(main_player.sprite.getPosition());
-                        dropped_ammo.emplace_back(main_player.bullets, dropped_ammo_sprite);
+                        dropped_ammo.emplace_back(main_player.leftover_ammo, dropped_ammo_sprite);
                         main_player.deaths++;
                     }
                     init_explosion(missile);

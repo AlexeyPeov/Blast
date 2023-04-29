@@ -60,6 +60,7 @@ public:
         map.gameState = &gameState;
         map.init_map_textures();
         mainMenu = MainMenu(font, videoMode, client, multiplayerAction, map, gameMode);
+        map.init_map_sounds();
 
     }
 
@@ -82,4 +83,6 @@ public:
     void draw_in_game_pause_menu();
 
     void draw_in_game_options_menu();
+
+    void draw_user_interface();
 };

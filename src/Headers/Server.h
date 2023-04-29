@@ -4,7 +4,7 @@
 #include <string>
 #include <csignal>
 #include "Client.h"
-
+// #define SERVER_DEBUG             // if on,  prints server debug info into console
 
 struct Server {
     sf::TcpListener listener;

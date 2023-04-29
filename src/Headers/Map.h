@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <iostream>
 #include <filesystem>
 #include <valarray>
@@ -63,6 +64,15 @@ struct Map {
     sf::Sprite unbreakable_walls_sprite;
     sf::Sprite floors_sprite;
 
+    // sounds
+
+    sf::SoundBuffer gun_reload_buffer;
+    sf::SoundBuffer single_shot_buffer;
+    sf::SoundBuffer walking_buffer;
+
+    sf::Sound gun_reload_sound;
+    sf::Sound single_shot_sound;
+    sf::Sound walking_sound;
 
 
     std::vector<sf::Vector2f> available_dm_spawn_positions;
@@ -133,5 +143,5 @@ struct Map {
 
     void init_missile(Player &player, Object &object);
 
-    bool main_player_can_init_missile() const;
+    void init_map_sounds();
 };

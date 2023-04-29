@@ -281,7 +281,7 @@ void Game::run() {
             if (gameState == GameState::IN_GAME_PAUSE) {
                // mainMenu.draw_in_pause(window, gameState);
             }
-
+            draw_user_interface();
 
         }
 
@@ -414,10 +414,11 @@ void Game::death_match() {
                 client.object.pos_y = map.main_player.sprite.getPosition().y;
 
                 map.main_player.hp = 100;
-                map.main_player.bullets = 120;
+                map.main_player.mag_ammo = mag_capacity;
+                map.main_player.leftover_ammo = max_ammo;
 
                 client.object.hp = 100;
-                client.object.bullets = 120;
+                client.object.bullets = mag_capacity + max_ammo;
             }
 
 
@@ -552,6 +553,105 @@ void Game::draw_score_menu(){
     for (auto &team2: team_2_text) {
         window.draw(team2.second);
     }
+}
+
+void Game::draw_user_interface(){
+    sf::Vector2f viewCenter = window.getView().getCenter();
+
+    sf::Vector2f low_left_corner = {viewCenter.x - (viewSize.x / 2) + 150,viewCenter.y + (viewSize.y / 2) - 50 };
+    sf::Vector2f low_right_corner = {viewCenter.x + (viewSize.x / 2) - 150,viewCenter.y + (viewSize.y / 2) - 50 };
+
+    // black half transparent low left corner half white text bold - hp
+    // black half transparent low right corner half white text bold - ammo
+
+    // circle radar?
+
+
+    sf::RectangleShape hp_rect = sf::RectangleShape(sf::Vector2f(120, 50));
+    hp_rect.setFillColor(sf::Color(5, 5, 5, 100));
+    hp_rect.setPosition(low_left_corner);
+    center_rect_shape(hp_rect);
+
+
+    sf::RectangleShape ammo_rect = sf::RectangleShape(sf::Vector2f(120, 50));
+    ammo_rect.setFillColor(sf::Color(5, 5, 5, 100));
+    ammo_rect.setPosition(low_right_corner);
+    center_rect_shape(ammo_rect);
+
+
+//    sf::Vector2f center_of_hp_rect = {hp_rect.getPosition().x - (hp_rect.getSize().x / 2), hp_rect.getPosition().y + (hp_rect.getSize().y / 2) };
+//    sf::Vector2f center_of_ammo_rect = {ammo_rect.getPosition().x - (ammo_rect.getSize().x / 2), ammo_rect.getPosition().y + (ammo_rect.getSize().y / 2) };
+
+    sf::Text hp_text( "+  " + std::to_string(map.main_player.hp), font);
+    hp_text.setScale(0.3, 0.3);
+    MainMenu::setUpText(hp_text, 60, low_left_corner.x - 20, low_left_corner.y - 12, sf::Color::White);
+
+    sf::Text ammo_text( std::to_string(map.main_player.mag_ammo) + " /" + std::to_string(map.main_player.leftover_ammo), font);
+    ammo_text.setScale(0.3, 0.3);
+    MainMenu::setUpText(ammo_text, 60, low_right_corner.x - 20, low_right_corner.y - 12, sf::Color::White);
+
+/*
+    std::map<int, sf::Text> team_1_text;
+    std::map<int, sf::Text> team_2_text;
+
+    float team_1_text_offset = -40;
+    float team_2_text_offset = -40;
+
+    if (client.object.team == 1) {
+        sf::Text text(std::string(client.object.nickname) + " " + std::to_string(client.object.kills) + " " + std::to_string(client.object.deaths) + " ", font);
+        text.setScale(0.3, 0.3);
+        MainMenu::setUpText(text, 24, viewCenter.x - 120 + 50, viewCenter.y + team_1_text_offset, sf::Color::White);
+        team_1_text_offset += 20;
+        team_1_text[client.object.id] = text;
+    } else {
+        sf::Text text(std::string(client.object.nickname) + " " + std::to_string(client.object.kills) + " " + std::to_string(client.object.deaths) + " ", font);
+        text.setScale(0.3, 0.3);
+        MainMenu::setUpText(text, 24, viewCenter.x - 15 + 50, viewCenter.y + team_2_text_offset, sf::Color::White);
+        team_2_text_offset += 20;
+        team_2_text[client.object.id] = text;
+    }
+
+    for (auto &player: client.objects) {
+        if (player.team == 1) {
+            sf::Text text(std::string(player.nickname) + " " + std::to_string(player.kills) + " " + std::to_string(player.deaths) + " ", font);
+            MainMenu::setUpText(text, 24, viewCenter.x - 120+ 50, viewCenter.y + team_1_text_offset, sf::Color::White);
+            text.setScale(0.3, 0.3);
+            team_1_text_offset += 20;
+            team_1_text[player.id] = text;
+        } else {
+            sf::Text text(std::string(player.nickname) + " " + std::to_string(player.kills) + " " + std::to_string(player.deaths) + " ", font);
+            MainMenu::setUpText(text, 24, viewCenter.x - 15+ 50, viewCenter.y + team_2_text_offset, sf::Color::White);
+            text.setScale(0.3, 0.3);
+            team_2_text_offset += 20;
+            team_1_text[player.id] = text;
+        }
+    }
+
+    sf::Text text1 = sf::Text("Amogusi", font);
+    sf::Text text2 = sf::Text("Abobusi", font);
+
+    text1.setScale(0.3, 0.3);
+    text2.setScale(0.3, 0.3);
+
+    MainMenu::setUpText(text1, 36, viewCenter.x - 120 + 50, viewCenter.y - 60, sf::Color::White);
+    MainMenu::setUpText(text2, 36, viewCenter.x - 15 + 50, viewCenter.y - 60, sf::Color::White);
+
+    sf::RectangleShape score_rect = sf::RectangleShape(sf::Vector2f(300, 200));
+    score_rect.setFillColor(sf::Color(128, 128, 128, 50));
+    score_rect.setPosition(viewCenter);
+    center_rect_shape(score_rect);*/
+
+    window.draw(hp_rect);
+    window.draw(ammo_rect);
+    window.draw(hp_text);
+    window.draw(ammo_text);
+/*
+    for (auto &team1: team_1_text) {
+        window.draw(team1.second);
+    }
+    for (auto &team2: team_2_text) {
+        window.draw(team2.second);
+    }*/
 }
 
 void Game::draw_in_game_pause_menu() {
