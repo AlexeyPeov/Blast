@@ -292,7 +292,7 @@ void MainMenu::drawMultiplayerLobby(sf::RenderWindow &window) {
         text5.setFillColor(sf::Color::Yellow);
         if (Mouse::clicked()) {
             menuState = MenuState::IS_HOST;
-            client->object.action = 0;
+            client->object.main_menu_action = 0;
         }
     }
 
@@ -507,7 +507,7 @@ void MainMenu::drawHostOptionsMenu(sf::RenderWindow &window)  {
     } else if (Mouse::cursorCollidesWithItem(mousePos, text5.getGlobalBounds())) {
         text5.setFillColor(sf::Color::Yellow);
         if (Mouse::clicked()) {
-            client->object.action = 0;
+            client->object.main_menu_action = 0;
             menuState = MenuState::MAIN_MENU;
         }
     }

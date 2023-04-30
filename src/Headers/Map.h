@@ -2,7 +2,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
-#include <iostream>
+//#include <iostream>
 #include <filesystem>
 #include <valarray>
 #include "Player.h"
@@ -43,6 +43,7 @@ struct Map {
     sf::Texture team2_player_texture;
     sf::Texture explosion_texture;
     sf::Texture dropped_ammo_texture;
+    sf::Texture bomb_texture;
 
     int width = 0;
     int height = 0;
@@ -57,6 +58,7 @@ struct Map {
     sf::Sprite explosion_sprite;
     sf::Sprite missile_sprite;
     sf::Sprite dropped_ammo_sprite;
+    sf::Sprite bomb_sprite;
 
     sf::RenderTexture unbreakable_walls_texture;
     sf::RenderTexture floors_texture;
@@ -68,11 +70,7 @@ struct Map {
 
     sf::SoundBuffer gun_reload_buffer;
     sf::SoundBuffer single_shot_buffer;
-    sf::SoundBuffer walking_buffer;
-
-    sf::Sound gun_reload_sound;
-    sf::Sound single_shot_sound;
-    sf::Sound walking_sound;
+    sf::SoundBuffer running_buffer;
 
 
     std::vector<sf::Vector2f> available_dm_spawn_positions;
@@ -80,9 +78,12 @@ struct Map {
     //std::vector<Wall> walls;
     //std::vector<Wall> unbreakable_walls;
     std::vector<std::pair<int, sf::Sprite>> dropped_ammo;
+    std::pair<bool, sf::Sprite> bomb;
     std::unordered_map<int, Player> players;
     std::vector<Animation> explosions;
     std::vector<Missile> missiles;
+
+
     Player main_player;
 
     std::unordered_map<sf::Vector2f, Wall, Vector2fHash> walls_for_collision_map;
@@ -144,4 +145,10 @@ struct Map {
     void init_missile(Player &player, Object &object);
 
     void init_map_sounds();
+
+    void spawn_bomb(sf::Vector2f position);
+
+    void check_collision_players_bomb();
+
+    sf::Vector2f calculate_3x3_non_wall_position(const sf::Vector2f &position, const float rotation) const;
 };

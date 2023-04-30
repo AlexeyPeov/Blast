@@ -8,15 +8,15 @@ namespace object{
 // shoot    map1   map2     map3    dm     tkovr   ready    host?
     void choose_map_1(Object &object){
         unchoose_maps(object);
-        object.action |= (1 << 1);
+        object.main_menu_action |= (1 << 1);
     }
     void choose_map_2(Object &object){
         unchoose_maps(object);
-        object.action |= (1 << 2);
+        object.main_menu_action |= (1 << 2);
     }
     void choose_map_3(Object &object){
         unchoose_maps(object);
-        object.action |= (1 << 3);
+        object.main_menu_action |= (1 << 3);
     }
 
     void choose_map(Object &object, short map){
@@ -30,19 +30,19 @@ namespace object{
     }
 
     void unchoose_maps(Object &object){
-        object.action &= ~(1 << 1);
-        object.action &= ~(1 << 2);
-        object.action &= ~(1 << 3);
+        object.main_menu_action &= ~(1 << 1);
+        object.main_menu_action &= ~(1 << 2);
+        object.main_menu_action &= ~(1 << 3);
     }
 
     void choose_death_match(Object &object){
-        object.action &= ~(1 << 5);
-        object.action |= (1 << 4);
+        object.main_menu_action &= ~(1 << 5);
+        object.main_menu_action |= (1 << 4);
     }
 
     void choose_takeover(Object &object){
-        object.action &= ~(1 << 4);
-        object.action |= (1 << 5);
+        object.main_menu_action &= ~(1 << 4);
+        object.main_menu_action |= (1 << 5);
     }
     void choose_game_mode(Object &object, short gamemode){
         if (gamemode == 1){
@@ -53,31 +53,31 @@ namespace object{
     }
     void ready(Object &object){
         if (is_ready(object)){
-            object.action &= ~(1 << 6);
+            object.main_menu_action &= ~(1 << 6);
         } else {
-            object.action |= (1 << 6);
+            object.main_menu_action |= (1 << 6);
         }
     }
 
     bool is_ready(Object &object){
-        return (object.action & (1 << 6)) != 0;
+        return (object.main_menu_action & (1 << 6)) != 0;
     }
 
     void set_host(Object &object){
-        object.action |= (1 << 7);
+        object.main_menu_action |= (1 << 7);
     }
     void set_not_host(Object &object){
-        object.action &= ~(1 << 7);
+        object.main_menu_action &= ~(1 << 7);
     }
 
     short which_map_is_chosen(Object &object){
-        if((object.action & (1 << 1)) != 0){
+        if((object.main_menu_action & (1 << 1)) != 0){
             //1
             return 1;
-        } else if((object.action & (1 << 2)) != 0){
+        } else if((object.main_menu_action & (1 << 2)) != 0){
             //2
             return 2;
-        } else if((object.action & (1 << 3)) != 0){
+        } else if((object.main_menu_action & (1 << 3)) != 0){
             //3
             return 3;
         }
@@ -85,10 +85,10 @@ namespace object{
     }
 
     short which_game_mode_is_chosen(Object &object){
-        if((object.action & (1 << 4)) != 0){
+        if((object.main_menu_action & (1 << 4)) != 0){
             //dm
             return 1;
-        } else if((object.action & (1 << 5)) != 0){
+        } else if((object.main_menu_action & (1 << 5)) != 0){
             //takeover
             return 2;
         }
@@ -96,18 +96,89 @@ namespace object{
     }
 
     bool is_host(Object &object){
-        return (object.action & (1 << 7)) != 0;
+        return (object.main_menu_action & (1 << 7)) != 0;
     }
     void shoot(Object &object){
-        object.action |= (1 << 0);
+        object.in_game_action |= (1 << 0);
     }
 
     void dont_shoot(Object &object){
-        object.action &= ~(1 << 0);
+        object.in_game_action &= ~(1 << 0);
     }
 
     bool is_shooting(Object &object){
-        return (object.action & (1 << 0)) != 0;
+        return (object.in_game_action & (1 << 0)) != 0;
+    }
+
+    void wants_or_needs_to_reload(Object &object){
+        object.in_game_action |= (1 << 1);
+    }
+
+    void doesnt_want_or_need_to_reload(Object &object){
+        object.in_game_action &= ~(1 << 1);
+    }
+
+    bool does_want_or_need_to_reload(Object &object){
+        return (object.in_game_action & (1 << 1)) != 0;
+    }
+
+    void reload_start(Object &object){
+        object.in_game_action |= (1 << 3);
+    }
+
+    void reload_end(Object &object){
+        object.in_game_action &= ~(1 << 3);
+    }
+
+    bool is_reloading(Object &object){
+        return (object.in_game_action & (1 << 3)) != 0;
+    }
+
+    void run(Object &object){
+        object.in_game_action |= (1 << 2);
+    }
+
+    void walk(Object &object){
+        object.in_game_action &= ~(1 << 2);
+    }
+
+    bool is_running(Object &object){
+        return (object.in_game_action & (1 << 2)) != 0;
+    }
+
+
+    void has_bomb(Object &object){
+        object.in_game_action |= (1 << 4);
+    }
+
+    void doesnt_have_bomb(Object &object){
+        object.in_game_action &= ~(1 << 4);
+    }
+
+    bool is_bomb_carrier(Object &object){
+        return (object.in_game_action & (1 << 4)) != 0;
+    }
+
+    void drop_bomb(Object &object){
+     //   if(is_bomb_carrier(object)){
+            object.in_game_action |= (1 << 5);
+            doesnt_have_bomb(object);
+     //   }
+    }
+
+    void dont_drop_bomb(Object &object){
+    //    if(is_bomb_carrier(object)){
+            object.in_game_action &= ~(1 << 5);
+     //   }
+    }
+
+    bool drops_bomb(Object &object){
+       // if(is_bomb_carrier(object)){
+            if ((object.in_game_action & (1 << 5)) != 0){
+                return true;
+            }
+     //   }
+        return false;
     }
 
     std::vector<char> serialize_object(const Object& object) {

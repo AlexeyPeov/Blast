@@ -19,6 +19,7 @@ void Map::init_map_textures() {
     this->wall_texture_2.loadFromFile(current_dir() + "/textures/border2.png");
     this->wall_texture_1.loadFromFile(current_dir() + "/textures/border1.png");
     this->dropped_ammo_texture.loadFromFile(current_dir() + "/textures/dropped_ammo.png");
+    this->bomb_texture.loadFromFile(current_dir() + "/textures/bomb.png");
 
     this->missile_texture.loadFromFile(current_dir() + "/textures/missle.png");
 
@@ -34,6 +35,11 @@ void Map::init_map_textures() {
     config_sprite(dropped_ammo_sprite);
     this->explosion_sprite = sf::Sprite(explosion_texture);
 
+    this->bomb_sprite.setTexture(bomb_texture);
+    config_sprite(bomb_sprite);
+
+    bomb.first = true;
+    bomb.second = bomb_sprite;
 
     this->wall_sprite = sf::Sprite(wall_texture_5);
     this->unbreakable_wall_sprite = sf::Sprite(wall_texture_unbreakable);
@@ -44,25 +50,18 @@ void Map::init_map_textures() {
 
 void Map::init_map_sounds(){
 
-    if (!gun_reload_buffer.loadFromFile(current_dir() + "/sounds/gun_reload.wav")) {
+    if (!gun_reload_buffer.loadFromFile(current_dir() + "/sounds/gun_reload_mono.wav")) {
         std::cerr << "failed to load reload sound\n";
     }
 
-    if (!single_shot_buffer.loadFromFile(current_dir() + "/sounds/shot.wav")) {
+    if (!single_shot_buffer.loadFromFile(current_dir() + "/sounds/shot_mono.wav")) {
         std::cerr << "failed to load shot sound\n";
     }
 
-    if (!walking_buffer.loadFromFile(current_dir() + "/sounds/walking_sound.wav")) {
+    if (!running_buffer.loadFromFile(current_dir() + "/sounds/walking_sound_mono.wav")) {
         std::cerr << "failed to load walking sound\n";
     }
 
-    gun_reload_sound.setBuffer(gun_reload_buffer);
-    single_shot_sound.setBuffer(single_shot_buffer);
-    walking_sound.setBuffer(walking_buffer);
-
-    gun_reload_sound.setVolume(60.f);
-
-    walking_sound.setLoop(true);
 }
 
 void Map::init_walls(short level) {
@@ -80,7 +79,7 @@ void Map::init_walls(short level) {
         height = level_1_height;
     }
     else if (level == 2) { arr = &level_2[0]; width = level_2_width; height = level_2_height; }
-    else if (level == 3) { arr = &dust_3[0];  width = dust_3_width; height = dust_3_height; }
+    else if (level == 3) { arr = &dust_3_a[0];  width = dust_3_a_width; height = dust_3_a_height; }
 
     unbreakable_walls_texture.clear(sf::Color::Transparent);
     floors_texture.clear(sf::Color::Transparent);
@@ -137,7 +136,7 @@ void Map::init_walls(short level) {
 }
 
 void Map::init_main_player(short team) {
-    float movement_speed = 2;
+    float movement_speed = walking_ms;
     float rotation_degree = 0;
     int hp = 100;
     sf::Sprite player_spr;
@@ -148,10 +147,32 @@ void Map::init_main_player(short team) {
     }
     config_sprite(main_player.sprite);
     main_player.sprite.setPosition(random_non_wall_position());
+
+    main_player.single_shot_sound.setBuffer(single_shot_buffer);
+    main_player.running_sound.setBuffer(running_buffer);
+    main_player.reload_sound.setBuffer(gun_reload_buffer);
+
+
+    main_player.reload_sound.setVolume(60.f);
+
+    main_player.running_sound.setLoop(true);
+    main_player.running_sound.setMinDistance(15.f);
+    main_player.running_sound.setAttenuation(1.f);
+
+
+    main_player.reload_sound.setMinDistance(5.f);
+    main_player.reload_sound.setAttenuation(2.f);
+
+    main_player.single_shot_sound.setMinDistance(1.f);
+    main_player.single_shot_sound.setAttenuation(20.f);
+
+
+//    main_player.reload_sound.setVolume(0);
+//    main_player.single_shot_sound.setVolume(0);
 }
 
 Player Map::init_new_player(int id, float pos_x, float pos_y, short team) const {
-    float movement_speed = 2;
+    float movement_speed = walking_ms;
     float rotation_degree = 0;
     int hp = 100;
     Player player;
@@ -162,13 +183,35 @@ Player Map::init_new_player(int id, float pos_x, float pos_y, short team) const 
     }
     config_sprite(player.sprite);
     player.sprite.setPosition(pos_x, pos_y);
+
+    player.single_shot_sound.setBuffer(single_shot_buffer);
+    player.running_sound.setBuffer(running_buffer);
+    player.reload_sound.setBuffer(gun_reload_buffer);
+
+
+    player.reload_sound.setVolume(60.f);
+
+    player.running_sound.setLoop(true);
+    player.running_sound.setMinDistance(55.f);
+    player.running_sound.setAttenuation(20.f);
+
+
+    player.reload_sound.setMinDistance(45.f);
+    player.reload_sound.setAttenuation(25.f);
+
+    player.single_shot_sound.setMinDistance(400.f);
+    player.single_shot_sound.setAttenuation(15.f);
+
+
     return player;
 }
 
 
 
 void Map::init_missile(Player &player, Object &object) {
-    single_shot_sound.play();
+    player.single_shot_sound.setPosition(player.sprite.getPosition().x, player.sprite.getPosition().y, 0.f);
+
+    player.single_shot_sound.play();
     int movement_speed = 40;
     float rotation_degree = object.rotation;
 
@@ -302,6 +345,29 @@ void Map::update_players(Client &client) {
                 init_missile(players[object.id], object);
                 players[object.id].mag_ammo --;
             }
+            if(object::does_want_or_need_to_reload(object)){
+                players[object.id].reload_sound.setPosition(players[object.id].sprite.getPosition().x, players[object.id].sprite.getPosition().y, 0);
+                players[object.id].reload_sound.play();
+            }
+
+            if(players[object.id].reloading){
+                players[object.id].reload_sound.setPosition(players[object.id].sprite.getPosition().x, players[object.id].sprite.getPosition().y, 0);
+            }
+
+            if(object::drops_bomb(object)){
+                bomb.first = true;
+                bomb.second.setPosition(calculate_3x3_non_wall_position({object.pos_x, object.pos_y}, players[object.id].sprite.getRotation() - 90));
+            }
+
+            if(object::is_running(object)){
+                players[object.id].running_sound.setVolume(60);
+                players[object.id].running_sound.setPosition(players[object.id].sprite.getPosition().x, players[object.id].sprite.getPosition().y, 0.f);
+            } else {
+                players[object.id].running_sound.setVolume(0);
+                players[object.id].running_sound.play();
+            }
+            players[object.id].team_t = (object.team == 1);
+            players[object.id].has_bomb = object::is_bomb_carrier(object);
             players[object.id].hp = object.hp;
             players[object.id].sprite.setRotation(object.rotation);
             players[object.id].sprite.setPosition(object.pos_x, object.pos_y);
@@ -309,19 +375,78 @@ void Map::update_players(Client &client) {
     }
 }
 
+sf::Vector2f Map::calculate_3x3_non_wall_position(const sf::Vector2f &position, const float rotation) const{
+
+    // rotaton is sprite.getRotation()
+    //      +   +   +
+    //      +  pos  +
+    //      +   +   +
+    sf::Vector2f current_pos = sf::Vector2f(((int) position.x / 40) * 40 + 20, ((int) position.y / 40) * 40 + 20);
+
+    std::vector<sf::Vector2f> offsets = {
+
+            {-40, -40},
+            {-40, 0},
+            {-40, 40},
+            {40, 0},
+            {0, -40}, {40, -40},
+            {0, 40},  {40, 40}
+
+    };
+
+    std::sort(offsets.begin(), offsets.end(), [&](const sf::Vector2f& a, const sf::Vector2f& b) {
+
+        float angle_a = std::atan2(a.y, a.x) - rotation * (M_PI / 180.0f);
+        float angle_b = std::atan2(b.y, b.x) - rotation * (M_PI / 180.0f);
+
+        angle_a = std::fmod(angle_a + 2 * M_PI, 2 * M_PI);
+        angle_b = std::fmod(angle_b + 2 * M_PI, 2 * M_PI);
+
+        return angle_a < angle_b;
+    });
+
+    for (const auto& offset : offsets) {
+        sf::Vector2f pos = current_pos + offset;
+        if (walls_for_collision_map.count(pos) == 0) {
+            return pos;
+        }
+    }
+
+    return position;
+
+}
+
 void Map::update_player(Client &client) {
     if (main_player.hp > 0) {
+        sf::Listener::setPosition(main_player.sprite.getPosition().x, main_player.sprite.getPosition().y, 0.f);
         if(object::is_shooting(client.object)){
             init_missile(main_player, client.object);
         }
+        main_player.handle_movement();
+        if(main_player.wants_to_drop_bomb()){
+            bomb.first = true;
+            bomb.second.setPosition(calculate_3x3_non_wall_position(main_player.sprite.getPosition(), main_player.sprite.getRotation() - 90));
+            object::drop_bomb(client.object);
+        } else {
+            object::dont_drop_bomb(client.object);
+        }
         main_player.timeSinceLastShot += 1;
         if (main_player.if_wants_or_needs_to_reload()){
-            gun_reload_sound.play();
+            main_player.reload_sound.setPosition(main_player.sprite.getPosition().x, main_player.sprite.getPosition().y, 0.f);
+            main_player.reload_sound.play();
+            object::wants_or_needs_to_reload(client.object);
+        } else {
+            object::doesnt_want_or_need_to_reload(client.object);
         }
         if(main_player.reloading){
+            main_player.reload_sound.setPosition(main_player.sprite.getPosition().x, main_player.sprite.getPosition().y, 0.f);
             main_player.reload_process++;
             main_player.reload();
+            object::reload_start(client.object);
+        } else {
+            object::reload_end(client.object);
         }
+        main_player.single_shot_sound.setPosition(client.object.pos_x, client.object.pos_y, 0);
     }
 }
 
@@ -385,11 +510,14 @@ void Map::main_player_move(sf::View &view, sf::RenderWindow &window, Client &cli
     }
     if (main_player.hp > 0) {
         if (gained_focus && *gameState == GameState::IN_GAME) {
-            if (main_player.move(worldMousePos)){
-                walking_sound.setVolume(60);
+            if (main_player.move(worldMousePos) && main_player.running){
+                main_player.running_sound.setVolume(60);
+                main_player.running_sound.setPosition(client.object.pos_x, client.object.pos_y, 0.f);
+                object::run(client.object);
             } else {
-                walking_sound.setVolume(0);
-                walking_sound.play();
+                main_player.running_sound.setVolume(0);
+                main_player.running_sound.play();
+                object::walk(client.object);
             }
             if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
                 if (main_player.can_shoot()) {
@@ -402,12 +530,18 @@ void Map::main_player_move(sf::View &view, sf::RenderWindow &window, Client &cli
         client.object.pos_y = main_player.sprite.getPosition().y;
         client.object.rotation = main_player.sprite.getRotation();
     }
-    client.object.bullets = main_player.mag_ammo + main_player.leftover_ammo;
+
+    if (main_player.has_bomb) {object::has_bomb(client.object);}
     client.object.hp = main_player.hp;
     client.object.kills = main_player.kills;
     client.object.deaths = main_player.deaths;
+    main_player.team_t = (client.object.team == 1);
 }
 
+void Map::spawn_bomb(sf::Vector2f position){
+    bomb.first = true;
+    bomb.second.setPosition(position);
+}
 
 void Map::check_collision_walls_players() {
 
@@ -503,6 +637,25 @@ void Map::check_collision_players_ammo(){
         }
     }
 
+}
+
+void Map::check_collision_players_bomb(){
+    for (auto &[id, player] : players){
+        if(player.hp > 0 && player.team_t && bomb.first){
+            if (collision(bomb.second, player.sprite, false, false)){
+                player.has_bomb = true;
+                bomb.first = false;
+                break;
+            }
+        }
+    }
+
+    if (collision(bomb.second, main_player.sprite, false, false)){
+        if(main_player.hp > 0 && main_player.team_t && bomb.first){
+            main_player.has_bomb = true;
+            bomb.first = false;
+        }
+    }
 }
 
 void Map::check_collision_missiles_walls_players() {
@@ -658,6 +811,9 @@ void Map::draw_missiles(sf::RenderWindow &window) {
 
 void Map::draw_dropped_ammo(sf::RenderWindow &window) {
     for (const auto &[amount, ammo] : dropped_ammo) window.draw(ammo);
+
+    auto&[dropped, bomb_spr] = bomb;
+    if(dropped) {window.draw(bomb_spr);}
 }
 
 void Map::draw_players(sf::RenderWindow &window) {

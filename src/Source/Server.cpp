@@ -143,7 +143,7 @@ void Server::printObjects() {
     std::cout << "\n\nOBJECTS: \n";
     for (auto &[id, obj]: this->objects) {
         std::cout << "id: " << obj.id << " posx: " << obj.pos_x << " posy : " << obj.pos_y << " Action: "
-                  << obj.action << "\n";
+                  << obj.main_menu_action << "\n";
     }
     std::cout << "\n\n";
 }

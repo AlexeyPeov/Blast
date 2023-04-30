@@ -15,14 +15,14 @@ struct Object {
     uint64_t id = 0;
     char nickname[nickname_length] = "aboba";
     int hp = 0;
-    int bullets = 120;
-    short team = 1;
+    short in_game_action = 0;
+    uint8_t team = 1;
     int kills = 0;
     int deaths = 0;
     float pos_x = 0;
     float pos_y = 0;
     float rotation = 0;
-    uint8_t action = 0;
+    uint8_t main_menu_action = 0;
     uint64_t tick = 0;
 };
 
@@ -31,11 +31,41 @@ struct Object {
 
 namespace object {
 
+    void wants_or_needs_to_reload(Object &object);
+
+    void doesnt_want_or_need_to_reload(Object &object);
+
+    bool does_want_or_need_to_reload(Object &object);
+
+    void run(Object &object);
+
+    void walk(Object &object);
+
+    bool is_running(Object &object);
+
     void shoot(Object &object);
 
     void dont_shoot(Object &object);
 
     bool is_shooting(Object &object);
+
+    void reload_start(Object &object);
+
+    void reload_end(Object &object);
+
+    bool is_reloading(Object &object);
+
+
+    void has_bomb(Object &object);
+
+    void doesnt_have_bomb(Object &object);
+
+    bool is_bomb_carrier(Object &object);
+
+    bool drops_bomb(Object &object);
+
+    void drop_bomb(Object &object);
+    void dont_drop_bomb(Object &object);
 
     void choose_map_1(Object &object);
     void choose_map_2(Object &object);

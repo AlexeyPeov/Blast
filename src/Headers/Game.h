@@ -46,6 +46,11 @@ private:
     Round round = Round::HAS_NOT_STARTED;
     GameMode gameMode = GameMode::NONE;
 
+
+    int score_t = 0;
+    int score_ct = 0;
+    int time_left = 0;
+
 public:
     Game() : desktop(sf::VideoMode::getDesktopMode()),
              window(sf::VideoMode(700, 500), "Blast", sf::Style::Titlebar | sf::Style::Close){
@@ -85,4 +90,6 @@ public:
     void draw_in_game_options_menu();
 
     void draw_user_interface();
+
+    void cool_down(int seconds, bool *to_set_to_false_after_cool_down);
 };
