@@ -213,8 +213,8 @@ void MainMenu::drawMultiplayerLobby(sf::RenderWindow &window) {
 
     sf::Text chooseTeam("Choose team", font);
 
-    text1 = sf::Text("Amogusi", font);
-    text2 = sf::Text("Abobusi", font);
+    text1 = sf::Text("team_t", font);
+    text2 = sf::Text("team_ct", font);
     if(client->host){
         text4 = sf::Text("Start", font);
     } else {

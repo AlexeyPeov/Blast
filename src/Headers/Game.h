@@ -13,8 +13,8 @@ struct Resolution {
 };
 
 struct ViewSize {
-    uint32_t x = 1120;
-    uint32_t y = 630;
+    uint32_t x = 1280;
+    uint32_t y = 720;
 
 //    uint32_t x = 1280;
 //    uint32_t y = 720;
@@ -92,4 +92,6 @@ public:
     void draw_user_interface();
 
     void cool_down(int seconds, bool *to_set_to_false_after_cool_down);
+
+    void handleEvents(sf::Event &e);
 };

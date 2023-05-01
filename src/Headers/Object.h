@@ -22,6 +22,7 @@ struct Object {
     float pos_x = 0;
     float pos_y = 0;
     float rotation = 0;
+    float missile_rotation = 0;
     uint8_t main_menu_action = 0;
     uint64_t tick = 0;
 };
@@ -100,4 +101,6 @@ namespace object {
     void deserialize_object(const std::vector<char>& data, Object & object);
 
     void copy_string_to_nickname(std::string &string, Object &object);
+
+    void reset(Object &object);
 }

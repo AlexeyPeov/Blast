@@ -225,4 +225,8 @@ namespace object{
             object.nickname[size + 1] = '\0';
         }
     }
+    void reset(Object &object){
+        object = Object();
+    }
+
 }

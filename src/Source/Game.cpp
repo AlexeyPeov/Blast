@@ -50,7 +50,6 @@ void Game::run() {
             window.setView(view);
             videoMode = VideoMode::UNCHANGED;
         }
-
         if (multiplayerAction != MultiplayerAction::NOTHING) {
             handleMultiplayerAction();
         }
@@ -74,6 +73,7 @@ void Game::run() {
                 mainMenu.nicknameInput.handleEvent(event);
             } else if (gameState == GameState::IN_GAME) {
                 //handle ingame events
+                handleEvents(event);
             }
             if (event.type == sf::Event::KeyPressed) {
                 if (event.key.code == sf::Keyboard::Key::Num9) {
@@ -383,17 +383,22 @@ void Game::takeover() {
         }
         map.main_player.hp = 100;
         map.main_player.mag_ammo = mag_capacity;
-        map.main_player.leftover_ammo = max_ammo;
+        map.main_player.leftover_ammo = max_ammo; //
 
         map.spawn_bomb({t_spawn.x + 40, t_spawn.y});
     } else if(is_in_round){
+
+        if(!map.team_t_alive()) {is_in_round = false; score_ct++; some_team_won = true;}
+        if(!map.team_ct_alive()) {is_in_round = false; score_t++; some_team_won = true;}
+
+       // if(map.bomb_planted()) { bomb_planted = true;}
+
+       // if(map.bomb_exploded()) {is_in_round = false; score_t++; some_team_won = true;}
+       // if(map.bomb_defused()) {is_in_round = false; score_ct++; some_team_won = true;}
+
+
         cool_down(165, &is_in_round);
-
-
-
-
     } else if(is_after_round){
-
         if(!bomb_planted && !some_team_won){
             score_ct++;
         }
@@ -407,6 +412,8 @@ void Game::takeover() {
         is_before_round = true;
         is_in_round = true;
         is_after_round = true;
+        some_team_won = false;
+        map.reset();
         std::cout << "cur-r: " << current_round << "\n";
     }
 
@@ -438,10 +445,31 @@ void Game::cool_down(int seconds, bool *to_set_to_false_after_cool_down){
     } else {
         auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - start);
         time_left = seconds - elapsed.count();
-        if(elapsed.count() >= seconds){
+        if(elapsed.count() >= seconds || *to_set_to_false_after_cool_down == false){
             *to_set_to_false_after_cool_down = false;
             cool_down_started = false;
         }
+    }
+}
+
+void Game::handleEvents(sf::Event &e){
+    if (e.type == sf::Event::MouseWheelScrolled)
+    {
+        if (e.mouseWheelScroll.delta > 0)
+        {
+            // onMouseScrollUp
+            viewSize.x += 16 * 5;
+            viewSize.y += 9 * 5;
+        }
+        else if (e.mouseWheelScroll.delta < 0)
+        {
+            // onMouseScrollDown
+            viewSize.x -= 16 * 5;
+            viewSize.y -= 9 * 5;
+        }
+
+        view.setSize(viewSize.x, viewSize.y);
+        window.setView(view);
     }
 }
 
@@ -450,6 +478,7 @@ void Game::handleKeyBindings() {
 
     // if in game
     //tab
+
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Tab)) {
         draw_score_menu();
     } else {
@@ -517,8 +546,8 @@ void Game::draw_score_menu(){
         }
     }
 
-    sf::Text text1 = sf::Text("Amogusi", font);
-    sf::Text text2 = sf::Text("Abobusi", font);
+    sf::Text text1 = sf::Text("team_t", font);
+    sf::Text text2 = sf::Text("team_ct", font);
 
     text1.setScale(0.3, 0.3);
     text2.setScale(0.3, 0.3);
@@ -710,6 +739,8 @@ void Game::draw_in_game_pause_menu() {
         text3_in_game.setFillColor(sf::Color::Yellow);
         if (Mouse::clicked()) {
             multiplayerAction = MultiplayerAction::STOP_SERVER_AND_CLIENT;
+            object::reset(client.object);
+            client.disconnect();
             gameState = GameState::MAIN_MENU;
             mainMenu.menuState = MenuState::MAIN_MENU;
         }

@@ -47,6 +47,7 @@ struct Map {
 
     int width = 0;
     int height = 0;
+    short map_level = 0;
 
     sf::Texture missile_texture;
 
@@ -151,4 +152,10 @@ struct Map {
     void check_collision_players_bomb();
 
     sf::Vector2f calculate_3x3_non_wall_position(const sf::Vector2f &position, const float rotation) const;
+
+    bool team_t_alive();
+
+    bool team_ct_alive();
+
+    void reset();
 };

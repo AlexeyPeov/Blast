@@ -71,6 +71,7 @@ void Map::init_walls(short level) {
     walls_map.clear();
     dropped_ammo.clear();
 
+    map_level = level;
 
     int *arr;
     if (level == 1) {
@@ -213,7 +214,7 @@ void Map::init_missile(Player &player, Object &object) {
 
     player.single_shot_sound.play();
     int movement_speed = 40;
-    float rotation_degree = object.rotation;
+    float rotation_degree = object.missile_rotation;
 
     missile_sprite.setRotation(rotation_degree);
     float xToRad = missile_sprite.getRotation() * M_PI / 180;
@@ -523,6 +524,7 @@ void Map::main_player_move(sf::View &view, sf::RenderWindow &window, Client &cli
                 if (main_player.can_shoot()) {
                     std::cout << "MAIN PLAYER INIT MISSILE\n";
                     object::shoot(client.object);
+                    client.object.missile_rotation = main_player.missile_rotation_based_on_movement();
                 }
             }
         }
@@ -881,3 +883,34 @@ std::vector<sf::Vector2f> Map::calculateFov() {
 
     return fov;
 }*/
+bool Map::team_t_alive(){
+    if(main_player.team_t && main_player.hp <= 0){
+        return false;
+    }
+
+    for(auto& [id, player] : players){
+        if (player.team_t && player.hp <= 0){
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool Map::team_ct_alive(){
+    if(!main_player.team_t && main_player.hp <= 0){
+        return false;
+    }
+
+    for(auto& [id, player] : players){
+        if (!player.team_t && player.hp <= 0){
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void Map::reset(){
+    init_walls(map_level);
+}
