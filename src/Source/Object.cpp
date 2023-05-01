@@ -181,6 +181,28 @@ namespace object{
         return false;
     }
 
+    void plant_bomb(Object &object){
+        object.in_game_action |= (1 << 6);
+    }
+    void not_plant_bomb(Object &object){
+        object.in_game_action &= ~(1 << 6);
+    }
+
+    bool is_bomb_planted(Object &object) {
+        return (object.in_game_action & (1 << 6)) != 0;
+    }
+
+    void defused(Object &object){
+        object.in_game_action |= (1 << 7);
+    }
+    void not_defused(Object &object){
+        object.in_game_action &= ~(1 << 7);
+    }
+
+    bool is_bomb_defused(Object &object) {
+        return (object.in_game_action & (1 << 7)) != 0;
+    }
+
     std::vector<char> serialize_object(const Object& object) {
         std::vector<char> data;
         data.resize(sizeof(Object));

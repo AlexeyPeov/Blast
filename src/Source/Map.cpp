@@ -20,7 +20,7 @@ void Map::init_map_textures() {
     this->wall_texture_1.loadFromFile(current_dir() + "/textures/border1.png");
     this->dropped_ammo_texture.loadFromFile(current_dir() + "/textures/dropped_ammo.png");
     this->bomb_texture.loadFromFile(current_dir() + "/textures/bomb.png");
-
+    this->a_site_texture.loadFromFile(current_dir() + "/textures/a_site.png");
     this->missile_texture.loadFromFile(current_dir() + "/textures/missle.png");
 
     this->explosion_texture.loadFromFile(current_dir() + "/textures/explosion.png");
@@ -30,6 +30,8 @@ void Map::init_map_textures() {
     this->team2_player_sprite = sf::Sprite(team2_player_texture);
 
     this->missile_sprite = sf::Sprite(missile_texture);
+    this->a_site_sprite.setTexture(a_site_texture);
+    config_sprite(a_site_sprite);
 
     this->dropped_ammo_sprite.setTexture(dropped_ammo_texture);
     config_sprite(dropped_ammo_sprite);
@@ -62,6 +64,27 @@ void Map::init_map_sounds(){
         std::cerr << "failed to load walking sound\n";
     }
 
+    if (!bomb_tick_buffer.loadFromFile(current_dir() + "/sounds/bomb_tick.wav")) {
+        std::cerr << "failed to load walking sound\n";
+    }
+
+    if (!bomb_explosion_buffer.loadFromFile(current_dir() + "/sounds/bomb_explosion.wav")) {
+        std::cerr << "failed to load walking sound\n";
+    }
+
+
+
+    bomb_tick_sound.setBuffer(bomb_tick_buffer);
+    bomb_explosion_sound.setBuffer(bomb_explosion_buffer);
+
+    bomb_tick_sound.setVolume(70);
+    bomb_tick_sound.setMinDistance(40.f);
+    bomb_tick_sound.setAttenuation(1.f);
+
+    bomb_explosion_sound.setVolume(60);
+    bomb_explosion_sound.setMinDistance(15.f);
+    bomb_explosion_sound.setAttenuation(1.f);
+
 }
 
 void Map::init_walls(short level) {
@@ -91,6 +114,7 @@ void Map::init_walls(short level) {
     unbreakable_walls_texture.clear(sf::Color::Transparent);
     floors_texture.clear(sf::Color::Transparent);
 
+    sf::Vector2f a_site_pos = {860, 340};
 
     for (int position = 0; position < (width * height); position++) {
 
@@ -123,6 +147,8 @@ void Map::init_walls(short level) {
             floors_texture.draw(floor_sprite);
         }
     }
+    a_site_sprite.setPosition(a_site_pos);
+    floors_texture.draw(a_site_sprite);
     unbreakable_walls_texture.display();
     floors_texture.display();
 
@@ -351,6 +377,18 @@ void Map::update_players(Client &client) {
                 players[object.id].reload_sound.play();
             }
 
+            if(object::is_bomb_planted(object)){
+                bomb.first = true;
+                bomb.second.setPosition(object.pos_x, object.pos_y);
+                bomb_planted = true;
+                bomb_tick_sound.setPosition(bomb.second.getPosition().x, bomb.second.getPosition().y, 0.f);
+                bomb_explosion_sound.setPosition(bomb.second.getPosition().x, bomb.second.getPosition().y, 0.f);
+            }
+
+            if(object::is_bomb_defused(object)){
+                bomb_defused = true;
+            }
+
             if(players[object.id].reloading){
                 players[object.id].reload_sound.setPosition(players[object.id].sprite.getPosition().x, players[object.id].sprite.getPosition().y, 0);
             }
@@ -372,6 +410,10 @@ void Map::update_players(Client &client) {
             players[object.id].hp = object.hp;
             players[object.id].sprite.setRotation(object.rotation);
             players[object.id].sprite.setPosition(object.pos_x, object.pos_y);
+        }
+        if(object::drops_bomb(object)){
+            bomb.first = true;
+            bomb.second.setPosition(calculate_3x3_non_wall_position({object.pos_x, object.pos_y}, players[object.id].sprite.getRotation() - 90));
         }
     }
 }
@@ -419,12 +461,36 @@ sf::Vector2f Map::calculate_3x3_non_wall_position(const sf::Vector2f &position, 
 
 void Map::update_player(Client &client) {
     if (main_player.hp > 0) {
-        sf::Listener::setPosition(main_player.sprite.getPosition().x, main_player.sprite.getPosition().y, 0.f);
+        sf::Listener::setPosition(client.object.pos_x, client.object.pos_y, 0.f);
         if(object::is_shooting(client.object)){
             init_missile(main_player, client.object);
         }
         main_player.handle_movement();
+        main_player.plant_bomb(a_site_sprite, bomb.second, object::is_shooting(client.object));
+        main_player.defuse_bomb(bomb.second, object::is_shooting(client.object));
+
+        if(main_player.planted_bomb && main_player.has_bomb){
+            main_player.has_bomb = false;
+            bomb.first = true;
+            object::plant_bomb(client.object);
+            std::cout << "PLANTED\n";
+            this->bomb_planted = true;
+            bomb_tick_sound.setPosition(bomb.second.getPosition().x, bomb.second.getPosition().y, 0.f);
+            bomb_explosion_sound.setPosition(bomb.second.getPosition().x, bomb.second.getPosition().y, 0.f);
+        } else {
+            object::not_plant_bomb(client.object);
+        }
+
+        if(main_player.defused_bomb && !bomb_defused){
+            puts("MAIN PLAYER DEFUSED\n");
+            object::defused(client.object);
+            bomb_defused = true;
+        } else {
+            object::not_defused(client.object);
+        }
+
         if(main_player.wants_to_drop_bomb()){
+            main_player.has_bomb = false;
             bomb.first = true;
             bomb.second.setPosition(calculate_3x3_non_wall_position(main_player.sprite.getPosition(), main_player.sprite.getRotation() - 90));
             object::drop_bomb(client.object);
@@ -448,6 +514,16 @@ void Map::update_player(Client &client) {
             object::reload_end(client.object);
         }
         main_player.single_shot_sound.setPosition(client.object.pos_x, client.object.pos_y, 0);
+    } else {
+        if(main_player.has_bomb){
+            bomb.first = true;
+            bomb.second.setPosition(calculate_3x3_non_wall_position(main_player.sprite.getPosition(), main_player.sprite.getRotation() - 90));
+            object::drop_bomb(client.object);
+            main_player.has_bomb = false;
+            std::cout << "bomb dropped, mainpl\n";
+        } else {
+            object::dont_drop_bomb(client.object);
+        }
     }
 }
 
@@ -643,7 +719,7 @@ void Map::check_collision_players_ammo(){
 
 void Map::check_collision_players_bomb(){
     for (auto &[id, player] : players){
-        if(player.hp > 0 && player.team_t && bomb.first){
+        if(player.hp > 0 && player.team_t && bomb.first && !bomb_planted){
             if (collision(bomb.second, player.sprite, false, false)){
                 player.has_bomb = true;
                 bomb.first = false;
@@ -653,7 +729,7 @@ void Map::check_collision_players_bomb(){
     }
 
     if (collision(bomb.second, main_player.sprite, false, false)){
-        if(main_player.hp > 0 && main_player.team_t && bomb.first){
+        if(main_player.hp > 0 && main_player.team_t && bomb.first && !bomb_planted){
             main_player.has_bomb = true;
             bomb.first = false;
         }
@@ -911,6 +987,33 @@ bool Map::team_ct_alive(){
     return true;
 }
 
+
+void Map::bomb_explode(){
+    sf::Sprite bomb_explosion = explosion_sprite;
+    bomb_explosion.setScale(2.5,2.5);
+    Animation explosion = Animation(bomb_explosion, 680 / 17, 40, 17, 5);
+    explosion.sprite.setPosition(bomb.second.getPosition());
+
+    config_sprite(missile_sprite);
+
+    bomb_explosion_sound.play();
+
+    for(int i = 0; i < 720; i++){
+        int angle = i % 360;
+        float xToRad = angle * M_PI / 180;
+        float dx = 10 * sin(xToRad);
+        float dy = 10 * cos(xToRad);
+        missile_sprite.setRotation(angle);
+        missile_sprite.setPosition(bomb.second.getPosition().x + dx, bomb.second.getPosition().y - dy);
+        Missile missile = Missile(missile_sprite, 40, angle);
+        missile.previousPosition = {bomb.second.getPosition().x, bomb.second.getPosition().y};
+        missiles.push_back(missile);
+    }
+    explosions.push_back(explosion);
+}
+
 void Map::reset(){
+    bomb_planted = false;
+    bomb_defused = false;
     init_walls(map_level);
 }

@@ -68,6 +68,16 @@ namespace object {
     void drop_bomb(Object &object);
     void dont_drop_bomb(Object &object);
 
+    void plant_bomb(Object & object);
+    void not_plant_bomb(Object & object);
+
+    bool is_bomb_planted(Object &object);
+
+    void defused(Object &object);
+    void not_defused(Object &object);
+
+    bool is_bomb_defused(Object &object);
+
     void choose_map_1(Object &object);
     void choose_map_2(Object &object);
     void choose_map_3(Object &object);

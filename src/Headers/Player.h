@@ -4,6 +4,7 @@
 #include "Entity.h"
 #include "KeyBoard.h"
 #include "Object.h"
+#include "SpriteMethods.h"
 #include <random>
 
 const int max_ammo = 90;
@@ -12,6 +13,9 @@ const int reload_time = 60 * 3;
 const float running_ms = 2.9;
 const float walking_ms = 1.5;
 
+const int defuse_time = 60 * 6;
+const int plant_time = 60 * 3.2;
+
 struct Player : Entity {
     uint64_t id = 0;
     int hp = 0;
@@ -19,12 +23,16 @@ struct Player : Entity {
     int deaths = 0;
     int shootDelay = 6;
     int timeSinceLastShot = 0;
+    int timer = 0;
     int mag_ammo = 30;
     int leftover_ammo = max_ammo;
     int reload_process = 0;
     bool team_t = false;
 
     bool has_bomb = false;
+
+    bool planted_bomb = false;
+    bool defused_bomb = false;
 
     sf::Sound running_sound;
     sf::Sound single_shot_sound;
@@ -155,5 +163,48 @@ struct Player : Entity {
             object::walk(object);
         }
     }
+
+    void plant_bomb(sf::Sprite &plant_area, sf::Sprite &bomb, bool shooting){
+        if(team_t && has_bomb && !this->planted_bomb){
+            if(
+                    sf::Keyboard::isKeyPressed(sf::Keyboard::E) &&
+                    collision(sprite, plant_area, false, false) &&
+                    !walking && !running && !reloading && !shooting
+                    ){
+                timer++;
+                if(timer >= plant_time){
+                    this->planted_bomb = true;
+                    bomb.setPosition(sprite.getPosition());
+                }
+            } else {
+                timer = 0;
+            }
+        }
+    }
+
+    void defuse_bomb(sf::Sprite &bomb, bool shooting){
+        if(!team_t){
+            if(
+                    sf::Keyboard::isKeyPressed(sf::Keyboard::E)
+                    && collision(sprite, bomb, false, false) &&
+                    !walking && !running && !reloading && !shooting
+                    ){
+                timer++;
+                if(timer >= defuse_time){
+                    defused_bomb = true;
+                }
+            } else {
+                timer = 0;
+            }
+        }
+    }
+
+    void clear_bomb_related_flags(){
+        has_bomb = false;
+        planted_bomb = false;
+        defused_bomb = false;
+        timer = 0;
+    }
+
 
 };

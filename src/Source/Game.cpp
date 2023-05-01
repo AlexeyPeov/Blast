@@ -361,6 +361,7 @@ void Game::takeover() {
 
     static bool is_before_round = true;
     static bool is_in_round = true;
+    static bool is_retake = false;
     static bool is_after_round = true;
 
     static const sf::Vector2f t_spawn = { 188, 1790 };
@@ -370,6 +371,8 @@ void Game::takeover() {
     static bool bomb_defused = false;
     static bool some_team_won = false;
 
+    static int bomb_tick_timer = 71;
+    static int ready = 0;
 
     // 2.45 min per round
 
@@ -391,16 +394,31 @@ void Game::takeover() {
         if(!map.team_t_alive()) {is_in_round = false; score_ct++; some_team_won = true;}
         if(!map.team_ct_alive()) {is_in_round = false; score_t++; some_team_won = true;}
 
-       // if(map.bomb_planted()) { bomb_planted = true;}
-
-       // if(map.bomb_exploded()) {is_in_round = false; score_t++; some_team_won = true;}
-       // if(map.bomb_defused()) {is_in_round = false; score_ct++; some_team_won = true;}
-
-
+        if(map.bomb_planted) { bomb_planted = true; is_in_round = false; is_retake = true;}
         cool_down(165, &is_in_round);
+    } else if(is_retake){
+
+        ready++;
+
+        if(!map.team_ct_alive()) {is_retake = false; score_t++; some_team_won = true;}
+
+        if(ready >= bomb_tick_timer){
+            map.bomb_tick_sound.play();
+            bomb_tick_timer -= 1;
+            ready = 0;
+        }
+
+        if(map.bomb_defused) {is_retake = false; score_ct++; some_team_won = true;}
+
+
+        cool_down(45, &is_retake);
     } else if(is_after_round){
+
+        if(bomb_planted && !map.bomb_defused && !some_team_won) { map.bomb_explode(); score_t++; some_team_won = true;}
+
         if(!bomb_planted && !some_team_won){
             score_ct++;
+            some_team_won = true;
         }
 
         cool_down(5, &is_after_round);
@@ -411,12 +429,19 @@ void Game::takeover() {
         current_round++;
         is_before_round = true;
         is_in_round = true;
+        is_retake = false;
         is_after_round = true;
         some_team_won = false;
+        bomb_tick_timer = 71;
+
+        bomb_planted = false;
+        bomb_defused = false;
         map.reset();
+        map.main_player.clear_bomb_related_flags();
+        client.object.in_game_action = 0;
         std::cout << "cur-r: " << current_round << "\n";
     }
-
+    //std::cout << (((int)map.main_player.sprite.getPosition().x / 40) * 40) + 20 << " " << (((int)map.main_player.sprite.getPosition().y / 40) * 40) + 20 << "\n";
     // t & ct
     // one of t has bomb
     // plant bomb at pos

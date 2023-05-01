@@ -44,6 +44,7 @@ struct Map {
     sf::Texture explosion_texture;
     sf::Texture dropped_ammo_texture;
     sf::Texture bomb_texture;
+    sf::Texture a_site_texture;
 
     int width = 0;
     int height = 0;
@@ -60,6 +61,7 @@ struct Map {
     sf::Sprite missile_sprite;
     sf::Sprite dropped_ammo_sprite;
     sf::Sprite bomb_sprite;
+    sf::Sprite a_site_sprite;
 
     sf::RenderTexture unbreakable_walls_texture;
     sf::RenderTexture floors_texture;
@@ -72,6 +74,12 @@ struct Map {
     sf::SoundBuffer gun_reload_buffer;
     sf::SoundBuffer single_shot_buffer;
     sf::SoundBuffer running_buffer;
+    sf::SoundBuffer bomb_tick_buffer;
+    sf::SoundBuffer bomb_explosion_buffer;
+
+
+    sf::Sound bomb_tick_sound;
+    sf::Sound bomb_explosion_sound;
 
 
     std::vector<sf::Vector2f> available_dm_spawn_positions;
@@ -92,6 +100,10 @@ struct Map {
 
 
     GameState *gameState = nullptr;
+
+
+    bool bomb_planted = false;
+    bool bomb_defused = false;
 
     void init_map_textures();
 
@@ -158,4 +170,7 @@ struct Map {
     bool team_ct_alive();
 
     void reset();
+
+
+    void bomb_explode();
 };
