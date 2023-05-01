@@ -455,13 +455,13 @@ void Game::cool_down(int seconds, bool *to_set_to_false_after_cool_down){
 void Game::handleEvents(sf::Event &e){
     if (e.type == sf::Event::MouseWheelScrolled)
     {
-        if (e.mouseWheelScroll.delta > 0)
+        if (e.mouseWheelScroll.delta < 0)
         {
             // onMouseScrollUp
             viewSize.x += 16 * 5;
             viewSize.y += 9 * 5;
         }
-        else if (e.mouseWheelScroll.delta < 0)
+        else if (e.mouseWheelScroll.delta > 0)
         {
             // onMouseScrollDown
             viewSize.x -= 16 * 5;
@@ -624,10 +624,10 @@ void Game::draw_user_interface(){
         center_rect_shape(rounds_won_rect);
 
         rounds_won_text.setScale(0.3, 0.3);
-        MainMenu::setUpText(rounds_won_text, 60, middle_up_corner.x - 25, middle_up_corner.y - 11, sf::Color::White);
+        MainMenu::setUpText(rounds_won_text, 60, middle_up_corner.x - 25, middle_up_corner.y - 25, sf::Color::White);
 
         time_left_text.setScale(0.3, 0.3);
-        MainMenu::setUpText(time_left_text, 60, middle_up_corner.x - 25, middle_up_corner.y + 10, sf::Color::White);
+        MainMenu::setUpText(time_left_text, 60, middle_up_corner.x - 25, middle_up_corner.y, sf::Color::White);
     }
 /*
     std::map<int, sf::Text> team_1_text;
