@@ -105,7 +105,7 @@ add_definitions(-DSFML_STATIC)
 # Find the SFML package and specify the components to use
 find_package(SFML 2.5 COMPONENTS graphics window system REQUIRED)
 
-add_executable(BLAST
+add_executable(BLAST WIN32
         src/main.cpp
 
         src/Source/Entity.cpp
@@ -121,13 +121,14 @@ add_executable(BLAST
         src/Source/Player.cpp
         src/Source/Server.cpp
         #src/Source/Application.cpp
-        src/Source/RayCaster.cpp)
+        src/Source/RayCaster.cpp src/Headers/Takeover.h)
 
 if(WIN32)
     add_custom_command(TARGET BLAST POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${PROJECT_SOURCE_DIR}/SFML-2.5.1_windows_MinGW64bit/bin"
-            $<TARGET_FILE_DIR:BLAST>)
+            $<TARGET_FILE_DIR:BLAST>
+            )
 endif()
 
 target_link_libraries(BLAST PRIVATE sfml-graphics sfml-window sfml-system sfml-network sfml-audio)

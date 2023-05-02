@@ -45,6 +45,8 @@ struct Map {
     sf::Texture dropped_ammo_texture;
     sf::Texture bomb_texture;
     sf::Texture a_site_texture;
+    sf::Texture plant_anim_texture;
+    sf::Texture defuse_anim_texture;
 
     int width = 0;
     int height = 0;
@@ -63,6 +65,10 @@ struct Map {
     sf::Sprite bomb_sprite;
     sf::Sprite a_site_sprite;
 
+
+    sf::Sprite plant_anim_sprite;
+    sf::Sprite defuse_anim_sprite;
+
     sf::RenderTexture unbreakable_walls_texture;
     sf::RenderTexture floors_texture;
 
@@ -77,10 +83,25 @@ struct Map {
     sf::SoundBuffer bomb_tick_buffer;
     sf::SoundBuffer bomb_explosion_buffer;
 
+    sf::SoundBuffer bomb_planted_buffer;
+    sf::SoundBuffer bomb_defused_buffer;
+
+    sf::SoundBuffer t_win_buffer;
+    sf::SoundBuffer ct_win_buffer;
+
 
     sf::Sound bomb_tick_sound;
     sf::Sound bomb_explosion_sound;
 
+    sf::Sound bomb_planted_sound;
+    sf::Sound bomb_defused_sound;
+
+    sf::Sound t_win_sound;
+    sf::Sound ct_win_sound;
+
+
+    Animation plant_animation;
+    Animation defuse_animation;
 
     std::vector<sf::Vector2f> available_dm_spawn_positions;
 
@@ -173,4 +194,6 @@ struct Map {
 
 
     void bomb_explode();
+
+    void draw_plant_defuse_animations(sf::RenderWindow &window);
 };

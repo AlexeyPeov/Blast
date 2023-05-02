@@ -23,6 +23,11 @@ void Map::init_map_textures() {
     this->a_site_texture.loadFromFile(current_dir() + "/textures/a_site.png");
     this->missile_texture.loadFromFile(current_dir() + "/textures/missle.png");
 
+    this->plant_anim_texture.loadFromFile(current_dir() + "/textures/plant_anim.png");
+    this->defuse_anim_texture.loadFromFile(current_dir() + "/textures/defuse_anim.png");
+
+
+
     this->explosion_texture.loadFromFile(current_dir() + "/textures/explosion.png");
 
 
@@ -37,6 +42,9 @@ void Map::init_map_textures() {
     config_sprite(dropped_ammo_sprite);
     this->explosion_sprite = sf::Sprite(explosion_texture);
 
+    this->plant_anim_sprite = sf::Sprite(plant_anim_texture);
+    this->defuse_anim_sprite = sf::Sprite(defuse_anim_texture);
+
     this->bomb_sprite.setTexture(bomb_texture);
     config_sprite(bomb_sprite);
 
@@ -48,6 +56,14 @@ void Map::init_map_textures() {
     this->floor_sprite = sf::Sprite(floor_texture);
 
     explosion_sprite.setOrigin(40.f / 2.f, (float) explosion_sprite.getTexture()->getSize().y / 2.f);
+    defuse_anim_sprite.setOrigin(40.f / 2.f, (float) defuse_anim_sprite.getTexture()->getSize().y / 2.f);
+    plant_anim_sprite.setOrigin(40.f / 2.f, (float) plant_anim_sprite.getTexture()->getSize().y / 2.f);
+
+
+
+    plant_animation = Animation(plant_anim_sprite, 1200 / 30, 40, 30, plant_time / 30);
+    defuse_animation = Animation(defuse_anim_sprite, 1200 / 30, 40, 30, defuse_time / 30);
+
 }
 
 void Map::init_map_sounds(){
@@ -72,10 +88,39 @@ void Map::init_map_sounds(){
         std::cerr << "failed to load walking sound\n";
     }
 
+    if (!bomb_planted_buffer.loadFromFile(current_dir() + "/sounds/bomb_planted.wav")) {
+        std::cerr << "failed to load bomb planted sound\n";
+    }
+
+    if (!bomb_defused_buffer.loadFromFile(current_dir() + "/sounds/bomb_defused.wav")) {
+        std::cerr << "failed to load bomb_defused sound\n";
+    }
+
+    if (!t_win_buffer.loadFromFile(current_dir() + "/sounds/t_win.wav")) {
+        std::cerr << "failed to load t_win sound\n";
+    }
+
+    if (!ct_win_buffer.loadFromFile(current_dir() + "/sounds/ct_win.wav")) {
+        std::cerr << "failed to load ct_win sound\n";
+    }
+
 
 
     bomb_tick_sound.setBuffer(bomb_tick_buffer);
     bomb_explosion_sound.setBuffer(bomb_explosion_buffer);
+
+    bomb_planted_sound.setBuffer(bomb_planted_buffer);
+    bomb_defused_sound.setBuffer(bomb_defused_buffer);
+
+    t_win_sound.setBuffer(t_win_buffer);
+    ct_win_sound.setBuffer(ct_win_buffer);
+
+    bomb_planted_sound.setVolume(20);
+    bomb_defused_sound.setVolume(20);
+    t_win_sound.setVolume(20);
+    ct_win_sound.setVolume(20);
+
+
 
     bomb_tick_sound.setVolume(70);
     bomb_tick_sound.setMinDistance(40.f);
@@ -264,6 +309,7 @@ void Map::init_explosion(Missile &missile) {
     explosion.sprite.setPosition(missile.sprite.getPosition());
     explosions.push_back(explosion);
 }
+
 
 void Map::update_wall(Wall &wall) {
     if (wall.hp < 5) {
@@ -466,8 +512,8 @@ void Map::update_player(Client &client) {
             init_missile(main_player, client.object);
         }
         main_player.handle_movement();
-        main_player.plant_bomb(a_site_sprite, bomb.second, object::is_shooting(client.object));
-        main_player.defuse_bomb(bomb.second, object::is_shooting(client.object));
+        main_player.plant_bomb(a_site_sprite, bomb.second, object::is_shooting(client.object), plant_animation);
+        main_player.defuse_bomb(bomb.second, object::is_shooting(client.object), defuse_animation);
 
         if(main_player.planted_bomb && main_player.has_bomb){
             main_player.has_bomb = false;
@@ -558,64 +604,6 @@ void Map::update_player(Client &client) {
 
 
 
-void Map::main_player_move(sf::View &view, sf::RenderWindow &window, Client &client, bool gained_focus, float deltaTime) {
-
-    if (main_player.id == 0) {
-        main_player.id = client.id;
-    }
-    sf::Vector2i mouse_position = sf::Mouse::getPosition(window);
-    sf::Vector2f worldMousePos = window.mapPixelToCoords(mouse_position);
-
-    // Update the view gradually if the mouse is on the full top/bottom/left/right of the screen
-    if (gained_focus && *gameState == GameState::IN_GAME) {
-        if (mouse_position.x <= 5) {
-            view.move(-3.0f * deltaTime, 0);
-            window.setView(view);
-        } else if (mouse_position.x >= (window.getSize().x - 5)) {
-            view.move(3.0f * deltaTime, 0);
-            window.setView(view);
-        } else if (mouse_position.y <= 5) {
-            view.move(0, -3.0f * deltaTime);
-            window.setView(view);
-        } else if (mouse_position.y >= (window.getSize().y - 5)) {
-            view.move(0, 3.0f * deltaTime);
-            window.setView(view);
-        } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
-            view.setCenter(main_player.sprite.getPosition());
-            window.setView(view);
-        }
-    }
-    if (main_player.hp > 0) {
-        if (gained_focus && *gameState == GameState::IN_GAME) {
-            if (main_player.move(worldMousePos) && main_player.running){
-                main_player.running_sound.setVolume(60);
-                main_player.running_sound.setPosition(client.object.pos_x, client.object.pos_y, 0.f);
-                object::run(client.object);
-            } else {
-                main_player.running_sound.setVolume(0);
-                main_player.running_sound.play();
-                object::walk(client.object);
-            }
-            if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
-                if (main_player.can_shoot()) {
-                    std::cout << "MAIN PLAYER INIT MISSILE\n";
-                    object::shoot(client.object);
-                    client.object.missile_rotation = main_player.missile_rotation_based_on_movement();
-                }
-            }
-        }
-        client.object.pos_x = main_player.sprite.getPosition().x;
-        client.object.pos_y = main_player.sprite.getPosition().y;
-        client.object.rotation = main_player.sprite.getRotation();
-    }
-
-    if (main_player.has_bomb) {object::has_bomb(client.object);}
-    client.object.hp = main_player.hp;
-    client.object.kills = main_player.kills;
-    client.object.deaths = main_player.deaths;
-    main_player.team_t = (client.object.team == 1);
-}
-
 void Map::spawn_bomb(sf::Vector2f position){
     bomb.first = true;
     bomb.second.setPosition(position);
@@ -643,6 +631,7 @@ void Map::check_collision_walls_players() {
         }
     }
 
+
    /* for (auto &wall: walls) {
         int wall_can_move = false;
         int player_can_move = true;
@@ -660,11 +649,6 @@ void Map::check_collision_walls_players() {
         collision(wall.sprite, main_player.sprite, wall_can_move, player_can_move);
     }
     */
-
-
-
-
-
 
 }
 
@@ -833,7 +817,7 @@ void Map::check_collision_missiles_walls_players() {
             for (auto &[id, player]: players) {
                 if (missile.player_who_shot != &player && player.hp > 0) {
                     if (collision(player.sprite, missile.sprite, wall_can_move, missile_can_move)) {
-                        std::cout << "pl_id:" << player.id << " misslePlId:" << missile.player_who_shot->id << "\n";
+                        //std::cout << "pl_id:" << player.id << " misslePlId:" << missile.player_who_shot->id << "\n"; // causes segfault when map.bomb_explode(); .. too bad!
                         player.hp -= missile.damage;
                         missile.life = false;
 
@@ -904,6 +888,15 @@ void Map::draw_players(sf::RenderWindow &window) {
 
 void Map::draw_explosions(sf::RenderWindow &window) {
     for (const auto &explosion: explosions) window.draw(explosion.sprite);
+}
+
+void Map::draw_plant_defuse_animations(sf::RenderWindow &window) {
+    if(plant_animation.elapsedTime > 0){
+        window.draw(plant_animation.sprite);
+    }
+    if(defuse_animation.elapsedTime > 0){
+        window.draw(defuse_animation.sprite);
+    }
 }
 
 sf::Vector2f Map::random_non_wall_position() {

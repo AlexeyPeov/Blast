@@ -13,6 +13,9 @@ struct Animation {
     int elapsedTime;
     bool finished;
 
+    Animation(){}
+    ~Animation(){}
+
     Animation(sf::Sprite sprite, int frameWidth, int frameHeight, int numFrames, int frameDuration) :
             sprite(std::move(sprite)),
             frameWidth(frameWidth),
@@ -27,4 +30,6 @@ struct Animation {
     }
 
     void update();
+
+    void reset();
 };

@@ -6,6 +6,7 @@
 #include "MainMenu.h"
 #include <chrono>
 #include <thread>
+#include "Takeover.h"
 
 struct Resolution {
     uint32_t x = 1280;
@@ -46,10 +47,9 @@ private:
     Round round = Round::HAS_NOT_STARTED;
     GameMode gameMode = GameMode::NONE;
 
+    Takeover takeover = Takeover();
 
-    int score_t = 0;
-    int score_ct = 0;
-    int time_left = 0;
+
 
 public:
     Game() : desktop(sf::VideoMode::getDesktopMode()),
@@ -66,6 +66,7 @@ public:
         map.init_map_textures();
         mainMenu = MainMenu(font, videoMode, client, multiplayerAction, map, gameMode);
         map.init_map_sounds();
+        takeover = Takeover(&map);
 
     }
 
@@ -73,13 +74,9 @@ public:
 
     void death_match();
 
-    void takeover();
-
-    void next_round();
+    void takeover_game_mode();
 
     void handleMultiplayerAction();
-
-    void round_duration();
 
     void handleKeyBindings();
 
@@ -91,7 +88,7 @@ public:
 
     void draw_user_interface();
 
-    void cool_down(int seconds, bool *to_set_to_false_after_cool_down);
-
     void handleEvents(sf::Event &e);
+
+    void draw_team_won(int team);
 };

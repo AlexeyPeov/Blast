@@ -76,13 +76,13 @@ void Game::run() {
                 handleEvents(event);
             }
             if (event.type == sf::Event::KeyPressed) {
-                if (event.key.code == sf::Keyboard::Key::Num9) {
+                if (event.key.code == sf::Keyboard::Key::LBracket) {
                     if (!client.active) {
                         //client.connect(mainMenu.ipInput.inputString, mainMenu.portInput.toInt());
                         client.connect("127.0.0.1", 53000);
                     }
                 }
-                if (event.key.code == sf::Keyboard::Key::Num0) {
+                if (event.key.code == sf::Keyboard::Key::RBracket) {
                     if (server.active) {
                         server.active = false;
                         std::cout << "Stopping server..\n";
@@ -113,7 +113,7 @@ void Game::run() {
             if (gameMode == GameMode::DEATH_MATCH) {
                 death_match();
             } else if(gameMode == GameMode::TAKEOVER){
-                takeover();
+                takeover_game_mode();
             }
             map.update_player(client);
             object::dont_shoot(client.object);
@@ -124,12 +124,11 @@ void Game::run() {
             map.update_explosions();
 
             //collision
-            map.check_collision_walls_players();
             map.check_collision_missiles_walls_players();
             map.check_collision_player_players();
             map.check_collision_players_ammo();
             map.check_collision_players_bomb();
-
+            map.check_collision_walls_players();
 
             //drawing
 
@@ -162,7 +161,7 @@ void Game::run() {
             map.draw_walls(window);
             map.draw_missiles(window);
             map.draw_explosions(window);
-
+            map.draw_plant_defuse_animations(window);
 
 
 //            sf::RenderTexture black_overlay;
@@ -175,7 +174,9 @@ void Game::run() {
 
 
 
-            map.main_player_move(view, window, client, gained_focus);
+            //map.main_player_move(view, window, client, gained_focus);
+            map.main_player.move_on_map(view, window, client, gameState, gained_focus, 2.0);
+            map.main_player.transfer_data_to(client.object);
             handleKeyBindings();
 
 
@@ -354,94 +355,10 @@ void Game::death_match() {
     // return
 }
 
-void Game::takeover() {
-    // 15 rounds
-    static int current_round = 1;
-    static const int max_rounds = 15;
+void Game::takeover_game_mode() {
 
-    static bool is_before_round = true;
-    static bool is_in_round = true;
-    static bool is_retake = false;
-    static bool is_after_round = true;
+    // todo: DONT FORGET TO SET CLIENT OBJECT TEAM TO OTHER TEAM IN MIDDLE GAME
 
-    static const sf::Vector2f t_spawn = { 188, 1790 };
-    static const sf::Vector2f ct_spawn = { 310, 445 };
-
-    static bool bomb_planted = false;
-    static bool bomb_defused = false;
-    static bool some_team_won = false;
-
-    static int bomb_tick_timer = 71;
-    static int ready = 0;
-
-    // 2.45 min per round
-
-
-    if(is_before_round){
-        cool_down(4, &is_before_round);
-        if(client.object.team == 1){
-            map.main_player.sprite.setPosition(t_spawn);
-        } else {
-            map.main_player.sprite.setPosition(ct_spawn);
-        }
-        map.main_player.hp = 100;
-        map.main_player.mag_ammo = mag_capacity;
-        map.main_player.leftover_ammo = max_ammo; //
-
-        map.spawn_bomb({t_spawn.x + 40, t_spawn.y});
-    } else if(is_in_round){
-
-        if(!map.team_t_alive()) {is_in_round = false; score_ct++; some_team_won = true;}
-        if(!map.team_ct_alive()) {is_in_round = false; score_t++; some_team_won = true;}
-
-        if(map.bomb_planted) { bomb_planted = true; is_in_round = false; is_retake = true;}
-        cool_down(165, &is_in_round);
-    } else if(is_retake){
-
-        ready++;
-
-        if(!map.team_ct_alive()) {is_retake = false; score_t++; some_team_won = true;}
-
-        if(ready >= bomb_tick_timer){
-            map.bomb_tick_sound.play();
-            bomb_tick_timer -= 1;
-            ready = 0;
-        }
-
-        if(map.bomb_defused) {is_retake = false; score_ct++; some_team_won = true;}
-
-
-        cool_down(45, &is_retake);
-    } else if(is_after_round){
-
-        if(bomb_planted && !map.bomb_defused && !some_team_won) { map.bomb_explode(); score_t++; some_team_won = true;}
-
-        if(!bomb_planted && !some_team_won){
-            score_ct++;
-            some_team_won = true;
-        }
-
-        cool_down(5, &is_after_round);
-    }
-
-
-    if(!is_before_round && !is_in_round && !is_after_round){
-        current_round++;
-        is_before_round = true;
-        is_in_round = true;
-        is_retake = false;
-        is_after_round = true;
-        some_team_won = false;
-        bomb_tick_timer = 71;
-
-        bomb_planted = false;
-        bomb_defused = false;
-        map.reset();
-        map.main_player.clear_bomb_related_flags();
-        client.object.in_game_action = 0;
-        std::cout << "cur-r: " << current_round << "\n";
-    }
-    //std::cout << (((int)map.main_player.sprite.getPosition().x / 40) * 40) + 20 << " " << (((int)map.main_player.sprite.getPosition().y / 40) * 40) + 20 << "\n";
     // t & ct
     // one of t has bomb
     // plant bomb at pos
@@ -456,26 +373,28 @@ void Game::takeover() {
     // if bomb planted & t.all dead && bomb.blw => t.win
     // if bomb planted & t.all dead && bomb.defused => ct.win
 
-}
+    if(!takeover.game_over){
+        if(takeover.is_before_round){
+            takeover.before_round();
+        } else if(takeover.is_in_round){
+            takeover.in_round();
+        } else if(takeover.is_retake){
+            takeover.retake();
+        } else if(takeover.is_after_round){
+            takeover.after_round();
+        } else {
+            takeover.reset_for_new_round();
 
-void Game::cool_down(int seconds, bool *to_set_to_false_after_cool_down){
-    static bool cool_down_started = false;
-    static std::chrono::system_clock::time_point start;
-
-    std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-
-    if(!cool_down_started){
-        start = std::chrono::system_clock::now();
-        cool_down_started = true;
-    } else {
-        auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - start);
-        time_left = seconds - elapsed.count();
-        if(elapsed.count() >= seconds || *to_set_to_false_after_cool_down == false){
-            *to_set_to_false_after_cool_down = false;
-            cool_down_started = false;
+            // this is a very bad way of doing this ... too bad!
+            if(map.main_player.team_t && client.object.team != TEAM_T){
+                client.object.team = 1;
+            } else if(!map.main_player.team_t && client.object.team == TEAM_T) {
+                client.object.team = 2;
+            }
         }
     }
 }
+
 
 void Game::handleEvents(sf::Event &e){
     if (e.type == sf::Event::MouseWheelScrolled)
@@ -530,6 +449,68 @@ void Game::handleKeyBindings() {
 
 
     }
+}
+
+void Game::draw_team_won(int team){
+    sf::Vector2i mp = sf::Mouse::getPosition(window);
+    sf::Vector2f mousePos = window.mapPixelToCoords(mp);
+
+    sf::Vector2f viewCenter = window.getView().getCenter();
+
+    sf::Text team_won_text;
+    if(team == 0){
+        team_won_text = sf::Text("Game draw", font);
+    } else if(team == 1){
+        team_won_text = sf::Text("Terrorists win", font);
+    } else if(team == 2){
+        team_won_text = sf::Text("Counter-terrorists win", font);
+    }
+
+    sf::Text replay_text = sf::Text("Replay", font);
+    sf::Text exit_text = sf::Text("Exit to main menu", font);
+
+    team_won_text.setScale(0.3, 0.3);
+    replay_text.setScale(0.3, 0.3);
+    exit_text.setScale(0.3, 0.3);
+
+    sf::RectangleShape menu_rect_in_game = sf::RectangleShape(sf::Vector2f(300, 200));
+
+    menu_rect_in_game.setFillColor(sf::Color(128, 128, 128, 200));
+    menu_rect_in_game.setPosition(viewCenter);
+    center_rect_shape(menu_rect_in_game);
+
+    MainMenu::setUpText(team_won_text, 36, viewCenter.x - 27, viewCenter.y - 40, sf::Color::White);
+    MainMenu::setUpText(replay_text, 36, viewCenter.x - 25, viewCenter.y - 20, sf::Color::White);
+    MainMenu::setUpText(exit_text, 36, viewCenter.x - 50, viewCenter.y, sf::Color::White);
+
+    if (Mouse::cursorCollidesWithItem(mousePos, replay_text.getGlobalBounds())) {
+        replay_text.setFillColor(sf::Color::Yellow);
+        if (Mouse::clicked()) {
+            gameState = GameState::MAIN_MENU;
+            object::ready(client.object);
+            takeover.reset();
+            if(server.active){
+                mainMenu.menuState = MenuState::HOST_OPTIONS;
+            } else {
+                mainMenu.menuState = MenuState::MULTIPLAYER_LOBBY;
+            }
+
+        }
+    } else if (Mouse::cursorCollidesWithItem(mousePos, exit_text.getGlobalBounds())) {
+        exit_text.setFillColor(sf::Color::Yellow);
+        if (Mouse::clicked()) {
+            gameState = GameState::MAIN_MENU;
+            mainMenu.menuState = MenuState::MAIN_MENU;
+            server.active = false;
+            client.disconnect();
+            takeover.reset();
+            object::reset(client.object);
+        }
+    }
+    window.draw(menu_rect_in_game);
+    window.draw(team_won_text);
+    window.draw(replay_text);
+    window.draw(exit_text);
 }
 
 void Game::draw_score_menu(){
@@ -621,10 +602,6 @@ void Game::draw_user_interface(){
     ammo_rect.setPosition(low_right_corner);
     center_rect_shape(ammo_rect);
 
-
-//    sf::Vector2f center_of_hp_rect = {hp_rect.getPosition().x - (hp_rect.getSize().x / 2), hp_rect.getPosition().y + (hp_rect.getSize().y / 2) };
-//    sf::Vector2f center_of_ammo_rect = {ammo_rect.getPosition().x - (ammo_rect.getSize().x / 2), ammo_rect.getPosition().y + (ammo_rect.getSize().y / 2) };
-
     sf::Text hp_text( "+  " + std::to_string(map.main_player.hp), font);
     hp_text.setScale(0.3, 0.3);
     MainMenu::setUpText(hp_text, 60, low_left_corner.x - 20, low_left_corner.y - 12, sf::Color::White);
@@ -633,17 +610,20 @@ void Game::draw_user_interface(){
     ammo_text.setScale(0.3, 0.3);
     MainMenu::setUpText(ammo_text, 60, low_right_corner.x - 20, low_right_corner.y - 12, sf::Color::White);
 
-    sf::RectangleShape rounds_won_rect = sf::RectangleShape(sf::Vector2f(100, 60));
-    sf::Text rounds_won_text( std::to_string(score_t) + " | " + std::to_string(score_ct), font);
-
-    std::string minutes = std::to_string(time_left / 60);
-    std::string seconds;
-    if((time_left % 60) < 10) {seconds = "0"; }
-    seconds += std::to_string(time_left % 60);
-
-    sf::Text time_left_text( minutes + " : " + seconds, font);
 
     if(gameMode == GameMode::TAKEOVER){
+
+        sf::RectangleShape rounds_won_rect = sf::RectangleShape(sf::Vector2f(100, 60));
+        sf::Text rounds_won_text( std::to_string(takeover.score_t) + " | " + std::to_string(takeover.score_ct), font);
+
+        std::string minutes = std::to_string(takeover.round_seconds_left / 60);
+        std::string seconds;
+        if((takeover.round_seconds_left % 60) < 10) {seconds = "0"; }
+        seconds += std::to_string(takeover.round_seconds_left % 60);
+
+        sf::Text time_left_text( minutes + " : " + seconds, font);
+
+
         rounds_won_rect.setFillColor(sf::Color(5, 5, 5, 100));
         rounds_won_rect.setPosition(middle_up_corner);
         center_rect_shape(rounds_won_rect);
@@ -653,76 +633,21 @@ void Game::draw_user_interface(){
 
         time_left_text.setScale(0.3, 0.3);
         MainMenu::setUpText(time_left_text, 60, middle_up_corner.x - 25, middle_up_corner.y, sf::Color::White);
-    }
-/*
-    std::map<int, sf::Text> team_1_text;
-    std::map<int, sf::Text> team_2_text;
 
-    float team_1_text_offset = -40;
-    float team_2_text_offset = -40;
-
-    if (client.object.team == 1) {
-        sf::Text text(std::string(client.object.nickname) + " " + std::to_string(client.object.kills) + " " + std::to_string(client.object.deaths) + " ", font);
-        text.setScale(0.3, 0.3);
-        MainMenu::setUpText(text, 24, viewCenter.x - 120 + 50, viewCenter.y + team_1_text_offset, sf::Color::White);
-        team_1_text_offset += 20;
-        team_1_text[client.object.id] = text;
-    } else {
-        sf::Text text(std::string(client.object.nickname) + " " + std::to_string(client.object.kills) + " " + std::to_string(client.object.deaths) + " ", font);
-        text.setScale(0.3, 0.3);
-        MainMenu::setUpText(text, 24, viewCenter.x - 15 + 50, viewCenter.y + team_2_text_offset, sf::Color::White);
-        team_2_text_offset += 20;
-        team_2_text[client.object.id] = text;
-    }
-
-    for (auto &player: client.objects) {
-        if (player.team == 1) {
-            sf::Text text(std::string(player.nickname) + " " + std::to_string(player.kills) + " " + std::to_string(player.deaths) + " ", font);
-            MainMenu::setUpText(text, 24, viewCenter.x - 120+ 50, viewCenter.y + team_1_text_offset, sf::Color::White);
-            text.setScale(0.3, 0.3);
-            team_1_text_offset += 20;
-            team_1_text[player.id] = text;
-        } else {
-            sf::Text text(std::string(player.nickname) + " " + std::to_string(player.kills) + " " + std::to_string(player.deaths) + " ", font);
-            MainMenu::setUpText(text, 24, viewCenter.x - 15+ 50, viewCenter.y + team_2_text_offset, sf::Color::White);
-            text.setScale(0.3, 0.3);
-            team_2_text_offset += 20;
-            team_1_text[player.id] = text;
+        if(takeover.game_over){
+            draw_team_won(takeover.team_won);
         }
+
+        window.draw(rounds_won_rect);
+        window.draw(rounds_won_text);
+        window.draw(time_left_text);
     }
-
-    sf::Text text1 = sf::Text("Amogusi", font);
-    sf::Text text2 = sf::Text("Abobusi", font);
-
-    text1.setScale(0.3, 0.3);
-    text2.setScale(0.3, 0.3);
-
-    MainMenu::setUpText(text1, 36, viewCenter.x - 120 + 50, viewCenter.y - 60, sf::Color::White);
-    MainMenu::setUpText(text2, 36, viewCenter.x - 15 + 50, viewCenter.y - 60, sf::Color::White);
-
-    sf::RectangleShape score_rect = sf::RectangleShape(sf::Vector2f(300, 200));
-    score_rect.setFillColor(sf::Color(128, 128, 128, 50));
-    score_rect.setPosition(viewCenter);
-    center_rect_shape(score_rect);*/
 
     window.draw(hp_rect);
     window.draw(ammo_rect);
 
     window.draw(hp_text);
     window.draw(ammo_text);
-
-    if(gameMode == GameMode::TAKEOVER){
-        window.draw(rounds_won_rect);
-        window.draw(rounds_won_text);
-        window.draw(time_left_text);
-    }
-/*
-    for (auto &team1: team_1_text) {
-        window.draw(team1.second);
-    }
-    for (auto &team2: team_2_text) {
-        window.draw(team2.second);
-    }*/
 }
 
 void Game::draw_in_game_pause_menu() {
@@ -768,6 +693,9 @@ void Game::draw_in_game_pause_menu() {
             client.disconnect();
             gameState = GameState::MAIN_MENU;
             mainMenu.menuState = MenuState::MAIN_MENU;
+            takeover.reset();
+            object::reset(client.object);
+            server.active = false;
         }
     }
     window.draw(menu_rect_in_game);

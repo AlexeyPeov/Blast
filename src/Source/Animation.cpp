@@ -12,3 +12,10 @@ void Animation::update() {
         finished = true;
     }
 }
+
+void Animation::reset(){
+    elapsedTime = 0;
+    currentFrame = 0;
+    finished = false;
+    sprite.setTextureRect(sf::IntRect(0, 0, frameWidth, frameHeight));
+}
