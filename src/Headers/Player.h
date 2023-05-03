@@ -91,14 +91,19 @@ struct Player : Entity {
     }
 
     void handle_movement(){
-        if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift) && movementKeysPressed()){
-            movement_speed = walking_ms;
-            running = false;
-            walking = true;
-        } else if (movementKeysPressed()) {
-            movement_speed = running_ms;
-            running = true;
-            walking = false;
+        if(hp > 0){
+            if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift) && movementKeysPressed()){
+                movement_speed = walking_ms;
+                running = false;
+                walking = true;
+            } else if (movementKeysPressed()) {
+                movement_speed = running_ms;
+                running = true;
+                walking = false;
+            } else {
+                running = false;
+                walking = false;
+            }
         } else {
             running = false;
             walking = false;

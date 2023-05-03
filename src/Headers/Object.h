@@ -4,6 +4,8 @@
 #include <cstring>
 #include <string>
 #include <iostream>
+#include <SFML/Network.hpp>
+#include <random>
 
 #define SHOOT 1
 #define DONT_SHOOT 0
@@ -13,8 +15,8 @@ const short nickname_length = 15;
 
 struct Object {
     uint64_t id = 0;
-    char nickname[nickname_length] = "aboba";
-    int hp = 0;
+    char nickname[nickname_length] = "anonymous";
+    int hp = 100;
     short in_game_action = 0;
     uint8_t team = 1;
     int kills = 0;
@@ -23,6 +25,7 @@ struct Object {
     float pos_y = 0;
     float rotation = 0;
     float missile_rotation = 0;
+    uint8_t team_won = 0;
     uint8_t main_menu_action = 0;
     uint64_t tick = 0;
 };
@@ -113,4 +116,10 @@ namespace object {
     void copy_string_to_nickname(std::string &string, Object &object);
 
     void reset(Object &object);
+
+    sf::Packet& operator<<(sf::Packet& packet, const Object& object);
+
+    sf::Packet& operator>>(sf::Packet& packet, Object& object);
+
+    uint64_t generate_random_id();
 }

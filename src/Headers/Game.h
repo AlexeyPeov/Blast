@@ -37,7 +37,7 @@ private:
     sf::Font font;
     sf::View view;
     Server server;
-    Client client;
+    Client client = Client();
     bool gained_focus = true;
     bool is_running = true;
     GameState gameState = GameState::MAIN_MENU;
@@ -66,7 +66,7 @@ public:
         map.init_map_textures();
         mainMenu = MainMenu(font, videoMode, client, multiplayerAction, map, gameMode);
         map.init_map_sounds();
-        takeover = Takeover(&map);
+        takeover = Takeover(&map, &client);
 
     }
 

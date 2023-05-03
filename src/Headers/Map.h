@@ -186,9 +186,13 @@ struct Map {
 
     sf::Vector2f calculate_3x3_non_wall_position(const sf::Vector2f &position, const float rotation) const;
 
-    bool team_t_alive();
+    bool team_t_alive_online(Client &client);
 
-    bool team_ct_alive();
+    bool team_ct_alive_online(Client &client);
+
+    bool team_t_alive_offline();
+
+    bool team_ct_alive_offline();
 
     void reset();
 

@@ -6,11 +6,18 @@
 #include <csignal>
 #include "Object.h"
 
-enum class MessageType {
-    ID,
-    TICK,
-    OBJECTS,
-    EMPTY,
+//#define CLIENT_DEBUG_SEND
+//#define CLIENT_DEBUG_RECEIVE
+
+using namespace object;
+
+struct MessageType {
+    static const uint8_t ID = 1;
+    static const uint8_t TICK = 2;
+    static const uint8_t OBJECTS = 3;
+    static const uint8_t OBJECT = 4;
+    static const uint8_t DISCONNECT = 5;
+    static const uint8_t EMPTY = 6;
 };
 
 const size_t max_players = 24;
@@ -18,24 +25,39 @@ const size_t max_players = 24;
 struct Client {
 
     uint64_t id = 0;
-    sf::TcpSocket socket;
+    sf::UdpSocket socket;
+    sf::IpAddress client_ip;
+    sf::IpAddress host_ip;
+    uint16_t host_port = 53000;
     std::vector<Object> objects;
+
     Object object;
     bool active = false;
     bool host = false;
-    bool freeze = false;
 
-    bool connect(std::string address, int port);
+    Client(){}
+    ~Client(){}
+
+    Client(uint64_t id, sf::IpAddress host_ip, sf::IpAddress client_ip, uint16_t port){
+        this->id = id;
+        this->host_ip = host_ip;
+        this->client_ip = client_ip;
+        this->host_port = port;
+    }
+
+    bool connect(sf::IpAddress address, uint16_t port);
 
     void disconnect();
 
-    static bool send_all_bytes(const void* data, std::size_t size, sf::TcpSocket &sock);
-
-    bool receive_all_bytes(void* data, std::size_t size);
-
     void receive_data();
 
-    bool send_data();
+    void send_data();
+
+
+
+    //static bool send_all_bytes(const void* data, std::size_t size, sf::UdpSocket &sock);
+
+    //bool receive_all_bytes(void* data, std::size_t size);
 
     void print_vector();
 

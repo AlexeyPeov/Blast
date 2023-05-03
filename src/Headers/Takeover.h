@@ -17,6 +17,7 @@ const uint8_t TEAM_CT = 2;
 struct Takeover {
 
     Map *map;
+    Client *client;
 
     uint8_t current_round = 1;
     bool game_over = false;
@@ -47,8 +48,9 @@ struct Takeover {
     bool cool_down_started = false;
     std::chrono::system_clock::time_point start;
 
-    explicit Takeover(Map *map) {
+    explicit Takeover(Map *map, Client *client) {
         this->map = map;
+        this->client = client;
     }
 
     Takeover(){}
@@ -72,13 +74,13 @@ struct Takeover {
     }
 
     void in_round() {
-        if (!map->team_t_alive()) {
+        if (!map->team_t_alive_online(*client)) {
             is_in_round = false;
             score_ct++;
             current_round_team_won = TEAM_CT;
             some_team_won = true;
         }
-        if (!map->team_ct_alive()) {
+        if (!map->team_ct_alive_online(*client)) {
             is_in_round = false;
             score_t++;
             some_team_won = true;
@@ -96,7 +98,7 @@ struct Takeover {
 
     void retake() {
         ready++;
-        if (!map->team_ct_alive()) {
+        if (!map->team_ct_alive_online(*client)) {
             is_retake = false;
             score_t++;
             some_team_won = true;
@@ -197,6 +199,18 @@ struct Takeover {
     }
 
     void change_teams(){
+
+        config_sprite(map->team2_player_sprite);
+        config_sprite(map->team1_player_sprite);
+
+        for(auto &[id, p] : map->players){
+            if(p.team_t){
+                p.sprite = map->team2_player_sprite;
+            } else {
+                p.sprite = map->team1_player_sprite;
+            }
+        }
+
         if(map->main_player.team_t){
             map->main_player.team_t = false;
             map->main_player.sprite = map->team2_player_sprite;

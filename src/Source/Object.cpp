@@ -251,4 +251,24 @@ namespace object{
         object = Object();
     }
 
+    sf::Packet& operator<<(sf::Packet& packet, const Object& object) {
+        return packet << object.id << object.nickname << object.hp << object.in_game_action
+                      << object.team << object.kills << object.deaths << object.pos_x
+                      << object.pos_y << object.rotation << object.missile_rotation
+                      << object.main_menu_action << object.tick;
+    }
+
+    sf::Packet& operator>>(sf::Packet& packet, Object& object) {
+        return packet >> object.id >> object.nickname >> object.hp >> object.in_game_action
+                      >> object.team >> object.kills >> object.deaths >> object.pos_x
+                      >> object.pos_y >> object.rotation >> object.missile_rotation
+                      >> object.main_menu_action >> object.tick;
+    }
+
+    uint64_t generate_random_id() {
+        static std::mt19937 generator(std::random_device{}());
+        std::uniform_int_distribution<uint64_t> distribution;
+        return distribution(generator);
+    }
+
 }

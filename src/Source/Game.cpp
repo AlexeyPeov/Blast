@@ -58,6 +58,13 @@ void Game::run() {
         sf::Event event{};
         while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed) {
+                if(client.active){
+                    client.disconnect();
+                    server.disconnect();
+                }
+                if(server.active){
+                    server.active = false;
+                }
                 is_running = false;
             }
             if (event.type == sf::Event::GainedFocus) {
@@ -85,6 +92,7 @@ void Game::run() {
                 if (event.key.code == sf::Keyboard::Key::RBracket) {
                     if (server.active) {
                         server.active = false;
+                        server.disconnect();
                         std::cout << "Stopping server..\n";
                     }
                     if (client.active) {
@@ -98,7 +106,7 @@ void Game::run() {
 
         window.clear();
         if (server.active) {
-            server.send_data();
+            server.receive_data();
         }
         if (client.active) {
             client.receive_data();
@@ -107,6 +115,7 @@ void Game::run() {
 
         if (gameState == GameState::MAIN_MENU) {
             mainMenu.draw(window);
+          //  std::cout << client.objects.size() << " " << map.players.size() << "\n";
         }
         else  {
 
@@ -191,7 +200,7 @@ void Game::run() {
             client.send_data();
         }
         if (server.active) {
-            server.receive_data();
+            server.send_data();
         }
 /*
         // Define the fragment shader source code
@@ -281,6 +290,7 @@ void Game::handleMultiplayerAction() {
     if (multiplayerAction == MultiplayerAction::STOP_SERVER_AND_CLIENT) {
         if (server.active) {
             server.active = false;
+            server.disconnect();
             std::cout << "Stopping server..\n";
         }
         if (client.active) {
@@ -478,8 +488,9 @@ void Game::draw_team_won(int team){
     menu_rect_in_game.setFillColor(sf::Color(128, 128, 128, 200));
     menu_rect_in_game.setPosition(viewCenter);
     center_rect_shape(menu_rect_in_game);
-
-    MainMenu::setUpText(team_won_text, 36, viewCenter.x - 27, viewCenter.y - 40, sf::Color::White);
+    // todo: steps while dead in multiplayer
+    // todo: sync fucking players already, jesus
+    MainMenu::setUpText(team_won_text, 36, viewCenter.x - 50, viewCenter.y - 40, sf::Color::White);
     MainMenu::setUpText(replay_text, 36, viewCenter.x - 25, viewCenter.y - 20, sf::Color::White);
     MainMenu::setUpText(exit_text, 36, viewCenter.x - 50, viewCenter.y, sf::Color::White);
 
@@ -502,6 +513,7 @@ void Game::draw_team_won(int team){
             gameState = GameState::MAIN_MENU;
             mainMenu.menuState = MenuState::MAIN_MENU;
             server.active = false;
+            server.disconnect();
             client.disconnect();
             takeover.reset();
             object::reset(client.object);
@@ -691,11 +703,11 @@ void Game::draw_in_game_pause_menu() {
             multiplayerAction = MultiplayerAction::STOP_SERVER_AND_CLIENT;
             object::reset(client.object);
             client.disconnect();
+            server.disconnect();
             gameState = GameState::MAIN_MENU;
             mainMenu.menuState = MenuState::MAIN_MENU;
             takeover.reset();
             object::reset(client.object);
-            server.active = false;
         }
     }
     window.draw(menu_rect_in_game);

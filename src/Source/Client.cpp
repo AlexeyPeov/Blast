@@ -1,131 +1,148 @@
 #include "../Headers/Client.h"
 
 
-bool Client::connect(std::string address, int port) {
+//bool Client::connect(std::string address, uint16_t port) {
+//    this->socket.setBlocking(false);
+//    this->host_ip = address;
+//    this->host_port = port;
+//    if (socket.bind(port, address) != sf::Socket::Done) {
+//        std::cerr << "Error connecting to Server\n";
+//        this->active = false;
+//    }
+//    this->active = true;
+//    std::cout << "Client running..\n";
+//    return active;
+//}
+
+bool Client::connect(sf::IpAddress address, uint16_t port) {
     this->socket.setBlocking(false);
-    if (socket.connect(address, port) != sf::Socket::Done) {
-        std::cerr << "Error connecting to Server\n";
-        this->active = false;
+    this->host_ip = address;
+    this->host_port = port;
+
+    uint64_t identifier = generate_random_id();
+
+    this->id = identifier;
+    this->object.id = identifier;
+#ifdef CLIENT_DEBUG_SEND
+    std::cout << "CL_ID: " << id << " OBJ_ID: " << object.id << "TICK:" << object.tick << "\n";
+#endif
+    sf::Packet packet;
+
+    packet << MessageType::OBJECT << object.id << object;
+    if (socket.send(packet, host_ip, host_port) != sf::Socket::Done) {
+#ifdef CLIENT_DEBUG_SEND
+        std::cerr << "Error connecting to server\n";
+#endif
+        return false;
     }
-    this->active = true;
+    active = true;
     std::cout << "Client running..\n";
-    return active;
+    return true;
 }
 
 void Client::disconnect() {
+    sf::Packet packet;
+    packet << MessageType::DISCONNECT << id << object;
+    if (socket.send(packet, host_ip, host_port) != sf::Socket::Done) {
+        // Error handling
+#ifdef CLIENT_DEBUG_SEND
+        std::cerr << "ERROR DISCONNECTING" << host_ip << " hp:" << host_port << '\n';
+#endif
+    } else {
+
+#ifdef CLIENT_DEBUG_SEND
+        std::cout << "DISCONNECTED: " << id << " OBJ_ID: " << object.id << "TICK:" << object.tick << "\n";
+#endif
+
+    }
     this->active = false;
-    this->socket.disconnect();
+    this->socket.unbind();
     this->objects.clear();
+    reset(this->object);
     std::cout << "Client stopped.\n";
 }
 
-bool Client::send_all_bytes(const void *data, std::size_t size, sf::TcpSocket &sock) {
-    std::size_t total_sent = 0;
-    int retries = 0;
-    while (total_sent < size) {
-        std::size_t sent;
-        if (sock.send(static_cast<const char *>(data) + total_sent, size - total_sent, sent) != sf::Socket::Done) {
-            if (++retries > 50000) {
-                std::cerr << " : too many retries\n";
-                return false;
-            }
-            continue;
-        }
-        total_sent += sent;
-        retries = 0;
+
+
+void Client::send_data() {
+    sf::Packet packet;
+    packet << MessageType::OBJECT << id << object;
+    if (socket.send(packet, host_ip, host_port) != sf::Socket::Done) {
+        // Error handling
+#ifdef CLIENT_DEBUG_SEND
+        std::cerr << "cl-side_err: h_ip" << host_ip << " hp:" << host_port << '\n';
+#endif
+    } else {
+
+#ifdef CLIENT_DEBUG_SEND
+        std::cout << "Client SEND DATA. TICK:" << object.tick << "\n";
+#endif
+
     }
-    return true;
+
 }
 
-bool Client::receive_all_bytes(void *data, std::size_t size) {
-    std::size_t total_received = 0;
-    int retries = 0;
-    while (total_received < size) {
-        std::size_t received = 0;
-        auto status = socket.receive(static_cast<char*>(data) + total_received, size - total_received, received);
-        if (status != sf::Socket::Done) {
-            if (status == sf::Socket::Disconnected) {
-                disconnect();
-                return true;
-            }
-            if (++retries > 50000) {
-                std::cerr << "Error receiving data: too many retries\n";
-                return false;
-            }
-            #ifdef SERVER_DEBUG
-            std::cout << "-" << retries;
-            #endif
-            continue;
-        }
-        total_received += received;
-        retries = 0;
-    }
-    #ifdef SERVER_DEBUG
-    std::cout << "+";
-    #endif
-    return true;
-}
 
 
 void Client::receive_data() {
-    if (active) {
-        MessageType message_type;
-        std::uint32_t data_size;
+    // Receive data from server
+    sf::Packet packet;
+    sf::IpAddress sender;
+    uint16_t port;
 
-        if (receive_all_bytes(&message_type, sizeof(message_type))) {
-            if (message_type == MessageType::ID) {
-                if (receive_all_bytes(&id, sizeof(id))) {
-                    this->object.id = id;
-                    this->object.tick = id;
-                } else {
-                    std::cerr << "Error receiving id from server\n";
-                }
-            } else if (message_type == MessageType::OBJECTS) {
+    while (socket.receive(packet, sender, port) == sf::Socket::Done) {
+        // Process received data
+        uint64_t curr_tick;
+        packet >> curr_tick;
+        size_t count;
+        packet >> count;
 
-                if (receive_all_bytes(&data_size, sizeof(data_size))) {
-                    std::vector<char> buff(data_size);
-                    if (receive_all_bytes(buff.data(), buff.size())) {
-                        object::deserialize_objects(buff, this->objects);
-                        for(auto obj = objects.begin(); obj != objects.end();){
-                            if(obj->id == object.id){
-                                obj = objects.erase(obj);
-                            } else {
-                                obj++;
-                            }
-                        }
-                    } else {
-                        std::cerr << "Error receiving data from Server\n";
-                    }
-                } else {
-                    std::cerr << "Error receiving data size from server\n";
-                }
-            } else if (message_type == MessageType::EMPTY) {
-                if (!objects.empty()) {
-                    objects.clear();
-                }
-            }
+#ifdef CLIENT_DEBUG_RECEIVE
+        if(curr_tick == object.tick + 1){
+            std::cout << "Received next tick\n";
         } else {
-            std::cerr << "Error receiving message type from server\n";
+            std::cout << "Received bad tick: " <<  curr_tick << " and obj.tick: " <<  object.tick << "\n";
+        }
+#endif
+
+        if(curr_tick == -1){
+            std::cout << "server off\n";
+            disconnect();
+            return;
+        }
+
+
+        if(curr_tick != object.tick){
+            objects.clear();
+#ifdef CLIENT_DEBUG_RECEIVE
+            std::cout << "COUNT:" << count << "\n";
+            std::cout << "RECEIVED as CL:" << curr_tick << " " << count << "h_ip:" << sender << "port:" << port << "\n";
+#endif
+
+            for (size_t i = 0; i < count; ++i) {
+                Object obj;
+                packet >> obj;
+
+                if(obj.id != object.id){
+#ifdef CLIENT_DEBUG_RECEIVE
+                    std::cout << "RECEIVED OBJ: " << obj.id <<  "\n";
+#endif
+                    objects.push_back(obj);
+                } else {
+                    object.hp = obj.hp;
+                    object.tick = obj.tick;
+                }
+            }
+
+        } else {
+#ifdef CLIENT_DEBUG_RECEIVE
+            std::cout << "RECEIVED WRONG TICK: " << curr_tick << " cl.obj.tick:" << object.tick << "\n";
+#endif
         }
     }
+
 }
 
-bool Client::send_data() {
-    if (active) {
-        if (object.id != 0) {
-            auto data = object::serialize_object(this->object);
-            if (send_all_bytes(data.data(), data.size(), this->socket)) {
-                this->object.tick++;
-                return true;
-            } else {
-                std::cerr << "Error sending data to Server\n";
-            }
-            //disconnect();
-        }
-        return false;
-    }
-    return false;
-}
 
 void Client::print_vector() {
     std::cout << "\n\nRECEIVING DATA: \n";

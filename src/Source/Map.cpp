@@ -453,10 +453,11 @@ void Map::update_players(Client &client) {
             }
             players[object.id].team_t = (object.team == 1);
             players[object.id].has_bomb = object::is_bomb_carrier(object);
-            players[object.id].hp = object.hp;
             players[object.id].sprite.setRotation(object.rotation);
             players[object.id].sprite.setPosition(object.pos_x, object.pos_y);
         }
+
+        players[object.id].hp = object.hp;
         if(object::drops_bomb(object)){
             bomb.first = true;
             bomb.second.setPosition(calculate_3x3_non_wall_position({object.pos_x, object.pos_y}, players[object.id].sprite.getRotation() - 90));
@@ -506,12 +507,12 @@ sf::Vector2f Map::calculate_3x3_non_wall_position(const sf::Vector2f &position, 
 }
 
 void Map::update_player(Client &client) {
+    main_player.handle_movement();
     if (main_player.hp > 0) {
         sf::Listener::setPosition(client.object.pos_x, client.object.pos_y, 0.f);
         if(object::is_shooting(client.object)){
             init_missile(main_player, client.object);
         }
-        main_player.handle_movement();
         main_player.plant_bomb(a_site_sprite, bomb.second, object::is_shooting(client.object), plant_animation);
         main_player.defuse_bomb(bomb.second, object::is_shooting(client.object), defuse_animation);
 
@@ -952,32 +953,71 @@ std::vector<sf::Vector2f> Map::calculateFov() {
 
     return fov;
 }*/
-bool Map::team_t_alive(){
-    if(main_player.team_t && main_player.hp <= 0){
-        return false;
+bool Map::team_t_alive_offline(){
+    if(main_player.team_t && main_player.hp > 0){
+        return true;
+    } else if(players.empty()){
+        return true;
     }
 
     for(auto& [id, player] : players){
-        if (player.team_t && player.hp <= 0){
-            return false;
+        if (player.team_t && player.hp > 0){
+            return true;
         }
     }
 
-    return true;
+
+
+    return false;
 }
 
-bool Map::team_ct_alive(){
-    if(!main_player.team_t && main_player.hp <= 0){
-        return false;
+bool Map::team_ct_alive_offline(){
+    if(!main_player.team_t && main_player.hp > 0){
+        return true;
+    } else if(players.empty()){
+        return true;
     }
 
     for(auto& [id, player] : players){
-        if (!player.team_t && player.hp <= 0){
-            return false;
+        if (!player.team_t && player.hp > 0){
+            return true;
         }
     }
 
-    return true;
+    return false;
+}
+
+bool Map::team_t_alive_online(Client& client){
+    if(client.object.team == 1 && client.object.hp > 0){
+        return true;
+    } else if(client.objects.empty()){
+        return true;
+    }
+
+    for(auto& object: client.objects){
+        if (object.team == 1 && object.hp > 0){
+            return true;
+        }
+    }
+
+
+    return false;
+}
+
+bool Map::team_ct_alive_online(Client &client){
+    if(client.object.team == 2 && client.object.hp > 0){
+        return true;
+    } else if(client.objects.empty()){
+        return true;
+    }
+
+    for(auto& object: client.objects){
+        if (object.team == 2 && object.hp > 0){
+            return true;
+        }
+    }
+
+    return false;
 }
 
 
