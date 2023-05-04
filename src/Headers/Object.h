@@ -25,15 +25,52 @@ struct Object {
     float pos_y = 0;
     float rotation = 0;
     float missile_rotation = 0;
-    uint8_t team_won = 0;
     uint8_t main_menu_action = 0;
     uint64_t tick = 0;
+    uint32_t sync = 0;
 };
-
-
+//  2^5 = 32 - current_round 0-4
+//  2^4 = 15 - team_t_score  5-8
+//  2^4 = 15 - team_ct_score 9-12
+//  13 - is_before_round
+//  14 - is_in_round
+//  15 - is_retake
+//  16 - is_after_round
+//  2^8 - time(seconds)     17-24
 
 
 namespace object {
+
+
+    void synchronize_host(
+            Object &host,
+            uint8_t current_round,
+            uint8_t team_t_score,
+            uint8_t team_ct_score,
+            bool is_before_round,
+            bool is_in_round,
+            bool is_retake,
+            bool is_after_round,
+            uint8_t seconds
+            );
+
+    void extract_sync_values(
+            const Object &object,
+            uint8_t &current_round,
+            uint8_t &team_t_score,
+            uint8_t &team_ct_score,
+            bool &is_before_round,
+            bool &is_in_round,
+            bool &is_retake,
+            bool &is_after_round,
+            uint8_t &seconds
+    );
+
+    void synchronize_with_host(Object &host, Object &not_host);
+
+    Object find_host(std::vector<Object> objects);
+
+    uint8_t extract_seconds_left(const Object &object);
 
     void wants_or_needs_to_reload(Object &object);
 

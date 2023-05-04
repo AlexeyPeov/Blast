@@ -6,6 +6,8 @@ namespace object{
 // 0        1       2       3       4       5       6       7
 // |        |       |        |      |        |      |        |
 // shoot    map1   map2     map3    dm     tkovr   ready    host?
+
+
     void choose_map_1(Object &object){
         unchoose_maps(object);
         object.main_menu_action |= (1 << 1);
@@ -203,6 +205,72 @@ namespace object{
         return (object.in_game_action & (1 << 7)) != 0;
     }
 
+    void synchronize_with_host(Object &host, Object &not_host){
+        if(!is_host(not_host) && is_host(host)){
+            not_host.sync = host.sync;
+        }
+    }
+
+    void synchronize_host(
+            Object &host,
+            uint8_t current_round,
+            uint8_t team_t_score,
+            uint8_t team_ct_score,
+            bool is_before_round,
+            bool is_in_round,
+            bool is_retake,
+            bool is_after_round,
+            uint8_t seconds
+    ){
+        if(is_host(host)){
+            host.sync = 0;
+            host.sync |= (current_round & 0b11111) << 0;
+            host.sync |= (team_t_score & 0b1111) << 5;
+            host.sync |= (team_ct_score & 0b1111) << 9;
+            host.sync |= (is_before_round & 0b1) << 13;
+            host.sync |= (is_in_round & 0b1) << 14;
+            host.sync |= (is_retake & 0b1) << 15;
+            host.sync |= (is_after_round & 0b1) << 16;
+            host.sync |= (seconds & 0b11111111) << 17;
+        }
+    }
+
+    void extract_sync_values(
+            const Object &object,
+            uint8_t &current_round,
+            uint8_t &team_t_score,
+            uint8_t &team_ct_score,
+            bool &is_before_round,
+            bool &is_in_round,
+            bool &is_retake,
+            bool &is_after_round,
+            uint8_t &seconds
+    ) {
+        current_round = (object.sync >> 0) & 0b11111;
+        team_t_score = (object.sync >> 5) & 0b1111;
+        team_ct_score = (object.sync >> 9) & 0b1111;
+        is_before_round = (object.sync >> 13) & 0b1;
+        is_in_round = (object.sync >> 14) & 0b1;
+        is_retake = (object.sync >> 15) & 0b1;
+        is_after_round = (object.sync >> 16) & 0b1;
+        seconds = (object.sync >> 17) & 0b11111111;
+    }
+
+    uint8_t extract_seconds_left(const Object &object) {
+        return (object.sync >> 17) & 0b11111111;
+    }
+
+    Object find_host(std::vector<Object> objects){
+        for(auto& object : objects){
+            if (is_host(object)){
+                return object;
+            }
+        }
+        std::cerr << "ERROR AT FIND_HOST";
+        Object obj;
+        return obj;
+    }
+
     std::vector<char> serialize_object(const Object& object) {
         std::vector<char> data;
         data.resize(sizeof(Object));
@@ -255,14 +323,14 @@ namespace object{
         return packet << object.id << object.nickname << object.hp << object.in_game_action
                       << object.team << object.kills << object.deaths << object.pos_x
                       << object.pos_y << object.rotation << object.missile_rotation
-                      << object.main_menu_action << object.tick;
+                      << object.main_menu_action << object.tick << object.sync;
     }
 
     sf::Packet& operator>>(sf::Packet& packet, Object& object) {
         return packet >> object.id >> object.nickname >> object.hp >> object.in_game_action
                       >> object.team >> object.kills >> object.deaths >> object.pos_x
                       >> object.pos_y >> object.rotation >> object.missile_rotation
-                      >> object.main_menu_action >> object.tick;
+                      >> object.main_menu_action >> object.tick >> object.sync;
     }
 
     uint64_t generate_random_id() {

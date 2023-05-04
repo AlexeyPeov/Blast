@@ -189,11 +189,14 @@ struct Player : Entity {
             if(timer != 0) {
                 plant_animation.sprite.setPosition(sprite.getPosition());
                 plant_animation.update();
+            } else {
+                timer = 0;
+                plant_animation.reset();
             }
             if(
                     sf::Keyboard::isKeyPressed(sf::Keyboard::E) &&
                     collision(sprite, plant_area, false, false) &&
-                    !walking && !running && !reloading && !obj_shooting && !planted_bomb
+                    !walking && !running && !reloading && !obj_shooting && !planted_bomb && hp > 0
                     ){
                 timer++;
                 if(timer >= plant_time){
@@ -219,7 +222,7 @@ struct Player : Entity {
             if(
                     sf::Keyboard::isKeyPressed(sf::Keyboard::E)
                     && collision(sprite, bomb, false, false) &&
-                    !walking && !running && !reloading && !obj_shooting && !defused_bomb
+                    !walking && !running && !reloading && !obj_shooting && !defused_bomb && hp > 0
                     ){
                 timer++;
                 if(timer >= defuse_time){
@@ -227,6 +230,7 @@ struct Player : Entity {
                 }
             } else {
                 timer = 0;
+                defuse_animation.reset();
             }
         }
     }

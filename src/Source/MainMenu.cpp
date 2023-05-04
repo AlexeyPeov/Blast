@@ -253,6 +253,7 @@ void MainMenu::drawMultiplayerLobby(sf::RenderWindow &window) {
             if(object::is_host(object)){
                 object::choose_map(client->object ,object::which_map_is_chosen(object));
                 object::choose_game_mode(client->object ,object::which_game_mode_is_chosen(object));
+                //todo sync time and rounds
                 break;
             }
         }

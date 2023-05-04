@@ -58,7 +58,6 @@ struct Takeover {
     ~Takeover(){}
 
     void before_round() {
-        cool_down(BEFORE_ROUND_TIME_SECONDS, &is_before_round);
         if (map->main_player.team_t) {
             map->main_player.sprite.setPosition(t_spawn);
         } else {
@@ -68,9 +67,16 @@ struct Takeover {
 
         map->main_player.hp = 100;
         map->main_player.mag_ammo = mag_capacity;
-        map->main_player.leftover_ammo = max_ammo; //
+        map->main_player.leftover_ammo = max_ammo;
 
         map->spawn_bomb({t_spawn.x + 40, t_spawn.y});
+
+
+        if(is_host(client->object)){
+            cool_down(BEFORE_ROUND_TIME_SECONDS, &is_before_round);
+        } else {
+            cool_down(extract_seconds_left(find_host(client->objects)), &is_in_round);
+        }
     }
 
     void in_round() {
@@ -93,7 +99,11 @@ struct Takeover {
             is_retake = true;
             map->bomb_planted_sound.play();
         }
-        cool_down(ROUND_TIME_SECONDS, &is_in_round);
+        if(is_host(client->object)){
+            cool_down(ROUND_TIME_SECONDS, &is_in_round);
+        } else {
+            cool_down(extract_seconds_left(find_host(client->objects)), &is_in_round);
+        }
     }
 
     void retake() {
@@ -118,7 +128,12 @@ struct Takeover {
             current_round_team_won = TEAM_CT;
             map->bomb_defused_sound.play();
         }
-        cool_down(TIME_TO_DEFUSE_BOMB, &is_retake);
+
+        if(is_host(client->object)){
+            cool_down(TIME_TO_DEFUSE_BOMB, &is_retake);
+        } else {
+            cool_down(extract_seconds_left(find_host(client->objects)), &is_in_round);
+        }
     }
 
     void after_round() {
@@ -144,8 +159,11 @@ struct Takeover {
                 current_round_team_won = 0;
             }
         }
-
-        cool_down(AFTER_ROUND_TIME_SECONDS, &is_after_round);
+        if(is_host(client->object)){
+            cool_down(AFTER_ROUND_TIME_SECONDS, &is_after_round);
+        } else {
+            cool_down(extract_seconds_left(find_host(client->objects)), &is_in_round);
+        }
     }
 
     void reset_for_new_round() {
@@ -256,5 +274,17 @@ struct Takeover {
                 cool_down_started = false;
             }
         }
+    }
+
+    void synchronize_with_host(){
+        Object host = find_host(client->objects);
+        if(is_host(host)){
+            client->object.sync = host.sync;
+        }
+        object::extract_sync_values(client->object, current_round, score_t, score_ct, is_before_round, is_in_round, is_retake, is_after_round, round_seconds_left);
+    }
+
+    void synchronize_host(Object &host){
+        object::synchronize_host(host,current_round, score_t, score_ct, is_before_round, is_in_round, is_retake, is_after_round, round_seconds_left);
     }
 };

@@ -990,7 +990,8 @@ bool Map::team_ct_alive_offline(){
 bool Map::team_t_alive_online(Client& client){
     if(client.object.team == 1 && client.object.hp > 0){
         return true;
-    } else if(client.objects.empty()){
+    }
+    if(client.objects.empty()){
         return true;
     }
 
@@ -1007,7 +1008,9 @@ bool Map::team_t_alive_online(Client& client){
 bool Map::team_ct_alive_online(Client &client){
     if(client.object.team == 2 && client.object.hp > 0){
         return true;
-    } else if(client.objects.empty()){
+    }
+
+    if(client.objects.empty()){
         return true;
     }
 

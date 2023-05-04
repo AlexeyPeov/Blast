@@ -173,21 +173,19 @@ void Game::run() {
             map.draw_plant_defuse_animations(window);
 
 
-//            sf::RenderTexture black_overlay;
-//            black_overlay.create(map.width * 40, map.height * 40);
-//            black_overlay.clear(sf::Color(0,0,0,25));
-//            sf::Sprite visibleAreaSprite(black_overlay.getTexture());
-//            visibleAreaSprite.setScale(1.f, -1.f);
-//            visibleAreaSprite.setPosition(0.f, black_overlay.getSize().y);
-//            window.draw(visibleAreaSprite);
-
-
-
             //map.main_player_move(view, window, client, gained_focus);
             map.main_player.move_on_map(view, window, client, gameState, gained_focus, 2.0);
             map.main_player.transfer_data_to(client.object);
             handleKeyBindings();
 
+
+            if(gameMode == TAKEOVER){
+                if(!is_host(client.object)){
+                    takeover.synchronize_with_host();
+                } else {
+                    takeover.synchronize_host(client.object);
+                }
+            }
 
             if (gameState == GameState::IN_GAME_PAUSE) {
                // mainMenu.draw_in_pause(window, gameState);
@@ -202,60 +200,6 @@ void Game::run() {
         if (server.active) {
             server.send_data();
         }
-/*
-        // Define the fragment shader source code
-        const char* fragmentShaderCode = R"(
-    uniform vec2 center;
-    uniform float radius;
-
-    void main() {
-        // Calculate the distance from the current pixel to the center of the circle
-        float distance = length(gl_FragCoord.xy - center);
-
-        // Calculate the color based on the distance
-        float alpha = smoothstep(radius, 0.0, distance);
-        gl_FragColor = vec4(0.0, 0.0, 0.0, alpha);
-    }
-)";
-
-    // Load the shader from the source code
-            sf::Shader shader;
-            if (!shader.loadFromMemory(fragmentShaderCode, sf::Shader::Fragment)) {
-                // Handle error
-            }
-
-        sf::RenderTexture renderTexture;
-        renderTexture.create(window.getSize().x, window.getSize().y);
-
-// Clear the render texture with a transparent color
-        renderTexture.clear(sf::Color::Transparent);
-
-// Draw the visible area onto the render texture
-        RayCaster::castRays(renderTexture, map.main_player.sprite.getPosition(), map.walls);
-
-// Display the contents of the render texture
-        //renderTexture.display();
-
-// Create a new sprite using the render texture as its texture
-        sf::Sprite visibleAreaSprite(renderTexture.getTexture());
-        //visibleAreaSprite.setPosition(map.main_player.sprite.getPosition());
-        visibleAreaSprite.setScale(1.f, -1.f);
-        visibleAreaSprite.setPosition(0.f, renderTexture.getSize().y);
-// Apply the shader to the sprite
-        window.draw(visibleAreaSprite);//, &shader);
-
-//    // Create a new circle shape with the desired radius
-//            sf::CircleShape shape(50);
-//
-//    // Set the position of the shape
-//            shape.setPosition(150, 150);
-//
-//    // Set the shader parameters
-//            shader.setUniform("center", shape.getPosition() + sf::Vector2f(shape.getRadius(), shape.getRadius()));
-//            shader.setUniform("radius", shape.getRadius());
-//
-//    // Draw the shape using the shader
-//            window.draw(shape, &shader);*/
 
 
         window.display();
