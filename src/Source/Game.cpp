@@ -221,7 +221,7 @@ void Game::handleMultiplayerAction() {
         if (!server.active) {
             server.set_listener();
             //client.connect(mainMenu.ipInput.inputString, mainMenu.portInput.toInt());
-            client.connect(client.getServerIp(), client.getServerPort());
+            client.connect(mainMenu.ipInput.inputString, mainMenu.portInput.toUint16());
         }
     }
 
