@@ -130,8 +130,8 @@ void Client::receive_data() {
         }
 #endif
 
-        if(curr_tick == -1){
-            std::cout << "server off\n";
+        if(curr_tick == UINT64_MAX){
+            std::cout << "server is off, disconnecting client..\n";
             disconnect();
             return;
         }

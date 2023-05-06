@@ -98,7 +98,7 @@ bool Server::send_data(){
 
 
 void Server::disconnect(){
-    tick = -1;
+    tick = UINT64_MAX;
     for (auto &client: clients) {
         sf::Packet packet;
         packet << tick;

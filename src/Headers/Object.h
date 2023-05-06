@@ -7,9 +7,6 @@
 #include <SFML/Network.hpp>
 #include <random>
 
-#define SHOOT 1
-#define DONT_SHOOT 0
-
 const short nickname_length = 15;
 
 
