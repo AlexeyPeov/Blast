@@ -4,11 +4,18 @@ Building a multiplayer game
 How to run:
 
     LINUX
-    
-        I think i've corrupted the linux sfml lib,
-        you can re-download it from here: https://www.sfml-dev.org/files/SFML-2.5.1-linux-gcc-64-bit.tar.gz
-        then add it to the game directory, overwriting the SFML2.5.1_linux    
-
+        git checkout linux (linux branch)
+        
+        if you use CLion, copy these directories to cmake-build-debug or cmake-build-release
+            - textures
+            - sounds
+            - src/shaders
+            - server_config.txt
+            
+        
+        
+        if you dont, just run these commands:
+        
         cmake .
         make
         ./BLAST
@@ -16,3 +23,4 @@ How to run:
     
     Windows
         there is a 'windows release' dir, the BLAST.exe is in there. Just run it
+        Dont forget to modify the server_config.txt, otherwise the game will crash..
