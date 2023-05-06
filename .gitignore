@@ -6,3 +6,4 @@ cmake-build-debug
 cmake-build-debug-coverage
 cmake-build-release
 server_config.txt
+windows release
