@@ -117,9 +117,9 @@ void Client::receive_data() {
 
     while (socket.receive(packet, sender, port) == sf::Socket::Done) {
         // Process received data
-        uint64_t curr_tick;
+        sf::Uint64 curr_tick;
         packet >> curr_tick;
-        size_t count;
+        sf::Uint64 count;
         packet >> count;
 
 #ifdef CLIENT_DEBUG_RECEIVE

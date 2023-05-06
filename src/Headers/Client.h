@@ -25,7 +25,7 @@ const size_t max_players = 24;
 
 struct Client {
 
-    uint64_t id = 0;
+    sf::Uint64 id = 0;
     sf::UdpSocket socket;
     sf::IpAddress client_ip;
     sf::IpAddress host_ip;

@@ -20,7 +20,7 @@ void Server::receive_data(){
         uint16_t port;
         while (server_socket.receive(packet, sender, port) == sf::Socket::Done) {
             uint8_t type;
-            uint64_t object_id;
+            sf::Uint64 object_id;
             Object object;
             packet >> type >> object_id >> object;
 
@@ -66,7 +66,7 @@ bool Server::send_data(){
         for (auto& client : clients) {
             sf::Packet packet;
             packet << tick;
-            packet << objects.size();
+            packet << (sf::Uint64)objects.size();
             for (auto &[id, object] : objects) {
                 object.tick = tick;
                 packet << object;
@@ -102,7 +102,7 @@ void Server::disconnect(){
     for (auto &client: clients) {
         sf::Packet packet;
         packet << tick;
-        packet << objects.size();
+        packet << (sf::Uint64)objects.size();
         for (auto &[id, object]: objects) {
             packet << object;
         }

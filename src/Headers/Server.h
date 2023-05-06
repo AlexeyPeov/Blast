@@ -15,7 +15,7 @@ struct Server {
     std::unordered_map<uint64_t, Object> objects;
     std::unordered_map<uint64_t, std::pair<std::unordered_map<uint64_t, Object>, uint8_t>> packets;
     bool active = false;
-    uint64_t tick = 0;
+    sf::Uint64 tick = 0;
 
     // receive data
     // run game loop
