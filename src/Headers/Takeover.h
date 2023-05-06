@@ -3,8 +3,8 @@
 #include <SFML/Graphics.hpp>
 #include "Map.h"
 
-const uint8_t BEFORE_ROUND_TIME_SECONDS = 1;
-const uint8_t AFTER_ROUND_TIME_SECONDS = 1;
+const uint8_t BEFORE_ROUND_TIME_SECONDS = 5;
+const uint8_t AFTER_ROUND_TIME_SECONDS = 4;
 const uint8_t ROUND_TIME_SECONDS =  165;//165;
 const uint8_t TIME_TO_DEFUSE_BOMB = 45;
 
@@ -42,11 +42,11 @@ struct TeamOnline{
         float default_spawn_y = 0;
 
         if(object.team == TEAM_T){
-//            default_spawn_x = 188;
-//            default_spawn_y = 1790;
+            default_spawn_x = 188;
+            default_spawn_y = 1790;
 
-            default_spawn_x = 280;
-            default_spawn_y = 445;
+//            default_spawn_x = 280;
+//            default_spawn_y = 445;
         } else if(object.team == TEAM_CT){
             default_spawn_x = 310;
             default_spawn_y = 445;
