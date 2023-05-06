@@ -83,12 +83,12 @@ void Game::run() {
                 handleEvents(event);
             }
             if (event.type == sf::Event::KeyPressed) {
-                if (event.key.code == sf::Keyboard::Key::LBracket) {
-                    if (!client.active) {
-                        //client.connect(mainMenu.ipInput.inputString, mainMenu.portInput.toInt());
-                        client.connect("127.0.0.1", 53000);
-                    }
-                }
+//                if (event.key.code == sf::Keyboard::Key::Home) {
+//                    if (!client.active) {
+//                        //client.connect(mainMenu.ipInput.inputString, mainMenu.portInput.toInt());
+//                        client.connect(client.getServerIp(), client.getServerPort());
+//                    }
+//                }
                 if (event.key.code == sf::Keyboard::Key::RBracket) {
                     if (server.active) {
                         server.active = false;
@@ -119,31 +119,37 @@ void Game::run() {
         }
         else  {
 
+            if(!gained_focus){
+                dont_shoot(client.object);
+            }
+
             if (gameMode == GameMode::DEATH_MATCH) {
                 death_match();
             } else if(gameMode == GameMode::TAKEOVER){
                 takeover_game_mode();
+                if(!takeover.game_over){
+                    map.update_player(client);
+                    object::dont_shoot(client.object);
+                    map.update_players(client);
+                    map.update_missiles();
+                    map.update_explosions();
+                    map.main_player.move_on_map(view, window, client, gameState, gained_focus, 2.0);
+
+
+                    map.check_collision_missiles_walls_players();
+                    map.check_collision_player_players();
+                    map.check_collision_players_ammo();
+                    map.check_collision_players_bomb();
+                    map.check_collision_walls_players();
+                } else {
+                    object::dont_shoot(client.object);
+                }
             }
-            map.update_player(client);
-            object::dont_shoot(client.object);
 
-            //update values
-            map.update_players(client);
-            map.update_missiles();
-            map.update_explosions();
-
-            //collision
-            map.check_collision_missiles_walls_players();
-            map.check_collision_player_players();
-            map.check_collision_players_ammo();
-            map.check_collision_players_bomb();
-            map.check_collision_walls_players();
-
-            //drawing
 
 
             map.draw_players(window);
-            // todo raycast
+
             sf::RenderTexture renderTexture;
             renderTexture.create(map.width * 40, map.height * 40);
             renderTexture.clear(sf::Color::Transparent);
@@ -154,10 +160,6 @@ void Game::run() {
             visibleAreaSprite.setScale(1.f, -1.f);
             visibleAreaSprite.setPosition(0.f, renderTexture.getSize().y);
 
-            sf::Shader shader;
-            if (!shader.loadFromFile(current_dir() + "/shaders/invert_colors.frag", sf::Shader::Fragment)) {
-                std::cerr << "Failed to load shader\n";
-            }
             shader.setUniform("texture", sf::Shader::CurrentTexture);
             window.draw(visibleAreaSprite, &shader);
             map.draw_floors(window);
@@ -173,8 +175,6 @@ void Game::run() {
             map.draw_plant_defuse_animations(window);
 
 
-            //map.main_player_move(view, window, client, gained_focus);
-            map.main_player.move_on_map(view, window, client, gameState, gained_focus, 2.0);
             map.main_player.transfer_data_to(client.object);
             handleKeyBindings();
 
@@ -182,6 +182,7 @@ void Game::run() {
             if(gameMode == TAKEOVER){
                 if(!is_host(client.object)){
                     takeover.synchronize_with_host();
+
                 } else {
                     takeover.synchronize_host(client.object);
                 }
@@ -220,13 +221,13 @@ void Game::handleMultiplayerAction() {
         if (!server.active) {
             server.set_listener();
             //client.connect(mainMenu.ipInput.inputString, mainMenu.portInput.toInt());
-            client.connect("127.0.0.1", 53000);
+            client.connect(client.getServerIp(), client.getServerPort());
         }
     }
 
     if (multiplayerAction == MultiplayerAction::START_CLIENT) {
         if (!client.active) {
-            client.connect(mainMenu.ipInput.inputString, mainMenu.portInput.toInt());
+            client.connect(mainMenu.ipInput.inputString, mainMenu.portInput.toUint16());
             //client.connect("127.0.0.1", 53000);
         }
     }
@@ -328,24 +329,7 @@ void Game::takeover_game_mode() {
     // if bomb planted & t.all dead && bomb.defused => ct.win
 
     if(!takeover.game_over){
-        if(takeover.is_before_round){
-            takeover.before_round();
-        } else if(takeover.is_in_round){
-            takeover.in_round();
-        } else if(takeover.is_retake){
-            takeover.retake();
-        } else if(takeover.is_after_round){
-            takeover.after_round();
-        } else {
-            takeover.reset_for_new_round();
-
-            // this is a very bad way of doing this ... too bad!
-            if(map.main_player.team_t && client.object.team != TEAM_T){
-                client.object.team = 1;
-            } else if(!map.main_player.team_t && client.object.team == TEAM_T) {
-                client.object.team = 2;
-            }
-        }
+        takeover.update();
     }
 }
 

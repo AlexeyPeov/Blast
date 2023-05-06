@@ -17,7 +17,7 @@ const float running_ms = 2.9;
 const float walking_ms = 1.5;
 
 const int defuse_time = 60 * 6;
-const int plant_time = 60 * 3.2;
+const int plant_time = 60 * 3.5;
 
 const int SHOOT_DELAY = 6;
 static std::mt19937 generator(std::random_device{}());

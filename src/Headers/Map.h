@@ -25,7 +25,7 @@ struct Wall {
     int hp = 4;
 };
 
-std::string current_dir();
+std::string working_dir();
 
 struct Vector2fHash {
     std::size_t operator()(const sf::Vector2f& v) const {
@@ -148,8 +148,6 @@ struct Map {
 
     void update_player(Client &client);
 
-    void main_player_move(sf::View &view, sf::RenderWindow &window, Client &client, bool gained_focus, float deltaTime = 2.0);
-
     void check_collision_walls_players();
 
     void check_collision_player_players();
@@ -165,8 +163,6 @@ struct Map {
     void draw_explosions(sf::RenderWindow &window);
 
     sf::Vector2f random_non_wall_position();
-
-    std::vector<sf::Vector2f> calculateFov();
 
     void check_collision_players_ammo();
 
@@ -194,8 +190,7 @@ struct Map {
 
     bool team_ct_alive_offline();
 
-    void reset();
-
+    void reset_for_new_round();
 
     void bomb_explode();
 

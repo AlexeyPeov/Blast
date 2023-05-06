@@ -1,4 +1,5 @@
 #include "../Headers/Client.h"
+#include "../Headers/Map.h"
 
 
 //bool Client::connect(std::string address, uint16_t port) {
@@ -13,6 +14,30 @@
 //    std::cout << "Client running..\n";
 //    return active;
 //}
+
+std::string Client::getServerIp(){
+    std::string ip;
+    std::ifstream file(working_dir() + "/server_config.txt");
+    if (file.is_open()) {
+        std::getline(file, ip);
+        file.close();
+    }
+    return ip;
+}
+
+uint16_t Client::getServerPort(){
+    std::string port_str;
+    uint16_t port = 0;
+    std::ifstream file(working_dir() + "/server_config.txt");
+    if (file.is_open()) {
+        std::getline(file, port_str); // skip first line
+        std::getline(file, port_str);
+        port = std::stoi(port_str);
+        file.close();
+    }
+    return port;
+}
+
 
 bool Client::connect(sf::IpAddress address, uint16_t port) {
     this->socket.setBlocking(false);

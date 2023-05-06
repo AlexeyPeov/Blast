@@ -2,33 +2,33 @@
 #include "../Headers/Levels.h"
 #include "../Headers/RayCaster.h"
 
-std::string current_dir() {
+std::string working_dir() {
     return std::filesystem::current_path().string();
 }
 
 void Map::init_map_textures() {
 
-    this->team1_player_texture.loadFromFile(current_dir() + "/textures/personStationary.png");
-    this->team2_player_texture.loadFromFile(current_dir() + "/textures/team2_player_image.png");
+    this->team1_player_texture.loadFromFile(working_dir() + "/textures/personStationary.png");
+    this->team2_player_texture.loadFromFile(working_dir() + "/textures/team2_player_image.png");
 
-    this->wall_texture_unbreakable.loadFromFile(current_dir() + "/textures/unbreakableBorder.png");
-    this->floor_texture.loadFromFile(current_dir() + "/textures/floor_new.png");
-    this->wall_texture_5.loadFromFile(current_dir() + "/textures/border5.png");
-    this->wall_texture_4.loadFromFile(current_dir() + "/textures/border4.png");
-    this->wall_texture_3.loadFromFile(current_dir() + "/textures/border3.png");
-    this->wall_texture_2.loadFromFile(current_dir() + "/textures/border2.png");
-    this->wall_texture_1.loadFromFile(current_dir() + "/textures/border1.png");
-    this->dropped_ammo_texture.loadFromFile(current_dir() + "/textures/dropped_ammo.png");
-    this->bomb_texture.loadFromFile(current_dir() + "/textures/bomb.png");
-    this->a_site_texture.loadFromFile(current_dir() + "/textures/a_site.png");
-    this->missile_texture.loadFromFile(current_dir() + "/textures/missle.png");
+    this->wall_texture_unbreakable.loadFromFile(working_dir() + "/textures/unbreakableBorder.png");
+    this->floor_texture.loadFromFile(working_dir() + "/textures/floor_new.png");
+    this->wall_texture_5.loadFromFile(working_dir() + "/textures/border5.png");
+    this->wall_texture_4.loadFromFile(working_dir() + "/textures/border4.png");
+    this->wall_texture_3.loadFromFile(working_dir() + "/textures/border3.png");
+    this->wall_texture_2.loadFromFile(working_dir() + "/textures/border2.png");
+    this->wall_texture_1.loadFromFile(working_dir() + "/textures/border1.png");
+    this->dropped_ammo_texture.loadFromFile(working_dir() + "/textures/dropped_ammo.png");
+    this->bomb_texture.loadFromFile(working_dir() + "/textures/bomb.png");
+    this->a_site_texture.loadFromFile(working_dir() + "/textures/a_site.png");
+    this->missile_texture.loadFromFile(working_dir() + "/textures/missle.png");
 
-    this->plant_anim_texture.loadFromFile(current_dir() + "/textures/plant_anim.png");
-    this->defuse_anim_texture.loadFromFile(current_dir() + "/textures/defuse_anim.png");
+    this->plant_anim_texture.loadFromFile(working_dir() + "/textures/plant_anim.png");
+    this->defuse_anim_texture.loadFromFile(working_dir() + "/textures/defuse_anim.png");
 
 
 
-    this->explosion_texture.loadFromFile(current_dir() + "/textures/explosion.png");
+    this->explosion_texture.loadFromFile(working_dir() + "/textures/explosion.png");
 
 
     this->team1_player_sprite = sf::Sprite(team1_player_texture);
@@ -68,39 +68,39 @@ void Map::init_map_textures() {
 
 void Map::init_map_sounds(){
 
-    if (!gun_reload_buffer.loadFromFile(current_dir() + "/sounds/gun_reload_mono.wav")) {
+    if (!gun_reload_buffer.loadFromFile(working_dir() + "/sounds/gun_reload_mono.wav")) {
         std::cerr << "failed to load reload sound\n";
     }
 
-    if (!single_shot_buffer.loadFromFile(current_dir() + "/sounds/shot_mono.wav")) {
+    if (!single_shot_buffer.loadFromFile(working_dir() + "/sounds/shot_mono.wav")) {
         std::cerr << "failed to load shot sound\n";
     }
 
-    if (!running_buffer.loadFromFile(current_dir() + "/sounds/walking_sound_mono.wav")) {
+    if (!running_buffer.loadFromFile(working_dir() + "/sounds/walking_sound_mono.wav")) {
         std::cerr << "failed to load walking sound\n";
     }
 
-    if (!bomb_tick_buffer.loadFromFile(current_dir() + "/sounds/bomb_tick.wav")) {
+    if (!bomb_tick_buffer.loadFromFile(working_dir() + "/sounds/bomb_tick.wav")) {
         std::cerr << "failed to load walking sound\n";
     }
 
-    if (!bomb_explosion_buffer.loadFromFile(current_dir() + "/sounds/bomb_explosion.wav")) {
+    if (!bomb_explosion_buffer.loadFromFile(working_dir() + "/sounds/bomb_explosion.wav")) {
         std::cerr << "failed to load walking sound\n";
     }
 
-    if (!bomb_planted_buffer.loadFromFile(current_dir() + "/sounds/bomb_planted.wav")) {
+    if (!bomb_planted_buffer.loadFromFile(working_dir() + "/sounds/bomb_planted.wav")) {
         std::cerr << "failed to load bomb planted sound\n";
     }
 
-    if (!bomb_defused_buffer.loadFromFile(current_dir() + "/sounds/bomb_defused.wav")) {
+    if (!bomb_defused_buffer.loadFromFile(working_dir() + "/sounds/bomb_defused.wav")) {
         std::cerr << "failed to load bomb_defused sound\n";
     }
 
-    if (!t_win_buffer.loadFromFile(current_dir() + "/sounds/t_win.wav")) {
+    if (!t_win_buffer.loadFromFile(working_dir() + "/sounds/t_win.wav")) {
         std::cerr << "failed to load t_win sound\n";
     }
 
-    if (!ct_win_buffer.loadFromFile(current_dir() + "/sounds/ct_win.wav")) {
+    if (!ct_win_buffer.loadFromFile(working_dir() + "/sounds/ct_win.wav")) {
         std::cerr << "failed to load ct_win sound\n";
     }
 
@@ -988,38 +988,39 @@ bool Map::team_ct_alive_offline(){
 }
 
 bool Map::team_t_alive_online(Client& client){
+
     if(client.object.team == 1 && client.object.hp > 0){
         return true;
-    }
-    if(client.objects.empty()){
+    } else if(client.objects.empty()){
         return true;
     }
 
     for(auto& object: client.objects){
         if (object.team == 1 && object.hp > 0){
-            return true;
+                return true;
         }
     }
-
 
     return false;
 }
 
 bool Map::team_ct_alive_online(Client &client){
+
+  //  bool anyone = false;
+
     if(client.object.team == 2 && client.object.hp > 0){
+        return true;
+    }else if(client.objects.empty()){
         return true;
     }
 
-    if(client.objects.empty()){
-        return true;
-    }
 
     for(auto& object: client.objects){
         if (object.team == 2 && object.hp > 0){
+          //  anyone = true;
             return true;
         }
     }
-
     return false;
 }
 
@@ -1048,8 +1049,10 @@ void Map::bomb_explode(){
     explosions.push_back(explosion);
 }
 
-void Map::reset(){
+void Map::reset_for_new_round(){
     bomb_planted = false;
     bomb_defused = false;
+    bomb.first = false;
     init_walls(map_level);
 }
+

@@ -2,6 +2,7 @@
 
 #include <SFML/Network.hpp>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <csignal>
 #include "Object.h"
@@ -150,4 +151,7 @@ struct Client {
          }
      }*/
 
+    std::string getServerIp();
+
+    uint16_t getServerPort();
 };

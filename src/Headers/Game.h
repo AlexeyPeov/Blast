@@ -38,6 +38,9 @@ private:
     sf::View view;
     Server server;
     Client client = Client();
+
+    sf::Shader shader;
+
     bool gained_focus = true;
     bool is_running = true;
     GameState gameState = GameState::MAIN_MENU;
@@ -61,12 +64,15 @@ public:
         //window.setView(view);
         window.setVerticalSyncEnabled(true);
         // Load the font and create the label
-        font.loadFromFile(current_dir() + "/textures/DejaVuSans.ttf");
+        font.loadFromFile(working_dir() + "/textures/DejaVuSans.ttf");
         map.gameState = &gameState;
         map.init_map_textures();
         mainMenu = MainMenu(font, videoMode, client, multiplayerAction, map, gameMode);
         map.init_map_sounds();
         takeover = Takeover(&map, &client);
+        if (!shader.loadFromFile(working_dir() + "/shaders/invert_colors.frag", sf::Shader::Fragment)) {
+                std::cerr << "Failed to load shader\n";
+        }
 
     }
 

@@ -49,9 +49,9 @@ struct MainMenu {
     MainMenu(sf::Font &font, VideoMode &gameVideoMode, Client &client, MultiplayerAction &multiplayerAction, Map &map, GameMode& gameMode) {
         this->font = font;
 
-        ipInput.init(font);
-        portInput.init(font);
-        nicknameInput.init(font);
+        ipInput.init(font, client.getServerIp());
+        portInput.init(font, std::to_string(client.getServerPort()));
+        nicknameInput.init(font, "anonymous");
 
         this->gameVideoMode = &gameVideoMode;
         this->client = &client;

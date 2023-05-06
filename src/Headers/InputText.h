@@ -1,5 +1,6 @@
+#pragma once
 #include "SFML/Graphics.hpp"
-
+#include <iostream>
 struct InputText {
 
     sf::RectangleShape box;
@@ -13,7 +14,7 @@ struct InputText {
     InputText()= default;
     ~InputText()= default;
 
-    void init(sf::Font &font);
+    void init(sf::Font &font, std::string str);
 
     void setPosition(float x, float y, float width, float height);
 
@@ -26,4 +27,6 @@ struct InputText {
     int toInt() const;
 
     void draw(sf::RenderWindow &window) const;
+
+    uint16_t toUint16() const;
 };

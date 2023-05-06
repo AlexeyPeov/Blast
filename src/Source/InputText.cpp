@@ -1,14 +1,15 @@
 #include "../Headers/InputText.h"
 
 
-void InputText::init(sf::Font &font) {
+void InputText::init(sf::Font &font, std::string str) {
     box.setFillColor(sf::Color::Black);
     box.setOutlineColor(sf::Color::White);
     box.setOutlineThickness(3);
     text.setCharacterSize(36);
     text.setFillColor(sf::Color::White);
     text.setFont(font);
-    text.setString("");
+    text.setString(str);
+    inputString = str;
     cursor.setCharacterSize(36);
     cursor.setFillColor(sf::Color::White);
     cursor.setFont(font);
@@ -72,6 +73,20 @@ int InputText::toInt() const {
         int value = std::stoi(inputString);
         return value;
     } catch (const std::invalid_argument &e) {
+        return 0;
+    }
+}
+
+uint16_t InputText::toUint16() const {
+    try {
+        int value = std::stoi(inputString);
+        if (value < 0 || value > UINT16_MAX) {
+            throw std::out_of_range("value out of range");
+        }
+        return static_cast<uint16_t>(value);
+    } catch (const std::invalid_argument &e) {
+        return 0;
+    } catch (const std::out_of_range &e) {
         return 0;
     }
 }
