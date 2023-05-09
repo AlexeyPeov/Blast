@@ -121,7 +121,11 @@ namespace object{
     }
 
     bool is_shooting(Object &object){
-        return (object.in_game_action & (1 << 0)) != 0;
+        if((object.in_game_action & (1 << 0)) != 0){
+            dont_shoot(object);
+            return true;
+        }
+        return false;
     }
 
     void wants_or_needs_to_reload(Object &object){
@@ -157,7 +161,11 @@ namespace object{
     }
 
     bool is_running(Object &object){
-        return (object.in_game_action & (1 << 2)) != 0;
+        if((object.in_game_action & (1 << 2)) != 0){
+            walk(object);
+            return true;
+        }
+        return false;
     }
 
 

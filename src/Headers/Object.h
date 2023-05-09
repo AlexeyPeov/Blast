@@ -11,20 +11,20 @@ const short nickname_length = 15;
 
 
 struct Object {
-    uint64_t id = 0;
+    sf::Uint64 id = 0;
     char nickname[nickname_length] = "anonymous";
     int hp = 100;
     short in_game_action = 0;
-    uint8_t team = 1;
+    sf::Uint8 team = 1;
     int kills = 0;
     int deaths = 0;
     float pos_x = 0;
     float pos_y = 0;
     float rotation = 0;
     float missile_rotation = 0;
-    uint8_t main_menu_action = 0;
-    uint64_t tick = 0;
-    uint32_t sync = 0;
+    sf::Uint8 main_menu_action = 0;
+    sf::Uint64 tick = 0;
+    sf::Uint32 sync = 0;
 };
 //  2^5 = 32 - current_round 0-4
 //  2^4 = 15 - team_t_score  5-8

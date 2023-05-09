@@ -127,38 +127,40 @@ void Game::run() {
                 death_match();
             } else if(gameMode == GameMode::TAKEOVER){
                 takeover_game_mode();
-                if(!takeover.game_over){
-                    map.update_player(client);
-                    object::dont_shoot(client.object);
-                    map.update_players(client);
-                    map.update_missiles();
-                    map.update_explosions();
-                    map.main_player.move_on_map(view, window, client, gameState, gained_focus, 2.0);
-
-
-                    map.check_collision_missiles_walls_players();
-                    map.check_collision_player_players();
-                    map.check_collision_players_ammo();
-                    map.check_collision_players_bomb();
-                    map.check_collision_walls_players();
-                } else {
-                    object::dont_shoot(client.object);
-                }
             }
 
+//            todo : combine update and draw
+//
+//            map.update_and_draw_player(client);
+//            map.update_and_draw_players(client);
+//            map.update_and_draw_missiles();
+//            map.update_and_draw_explosions();
+
+            map.update_player(client);
+            object::dont_shoot(client.object);
+            map.update_players(client);
+            map.update_missiles();
+            map.update_explosions();
+            map.main_player.move_on_map(view, window, client, gameState, gained_focus, 2.0);
+
+
+            map.check_collision_missiles_walls_players();
+            map.check_collision_player_players();
+            map.check_collision_players_ammo();
+            map.check_collision_players_bomb();
+            map.check_collision_walls_players();
 
 
             map.draw_players(window);
 
-            sf::RenderTexture renderTexture;
-            renderTexture.create(map.width * 40, map.height * 40);
-            renderTexture.clear(sf::Color::Transparent);
-            RayCaster::castRays(renderTexture, map.main_player.sprite.getPosition(), map.walls_for_collision_map, map.main_player.sprite.getRotation() - 157.5);
+            map.shadowCastTexture.clear(sf::Color::Transparent);
+            RayCaster::castRays(map.shadowCastTexture, map.main_player.sprite.getPosition(), map.walls_for_collision_map, map.main_player.sprite.getRotation() - 157.5);
 
 
-            sf::Sprite visibleAreaSprite(renderTexture.getTexture());
+            sf::Sprite visibleAreaSprite;
+            visibleAreaSprite.setTexture(map.shadowCastTexture.getTexture());
             visibleAreaSprite.setScale(1.f, -1.f);
-            visibleAreaSprite.setPosition(0.f, renderTexture.getSize().y);
+            visibleAreaSprite.setPosition(0.f, map.shadowCastTexture.getSize().y);
 
             shader.setUniform("texture", sf::Shader::CurrentTexture);
             window.draw(visibleAreaSprite, &shader);
@@ -427,6 +429,7 @@ void Game::draw_team_won(int team){
         if (Mouse::clicked()) {
             gameState = GameState::MAIN_MENU;
             object::ready(client.object);
+            client.object.in_game_action = 0;
             takeover.reset();
             if(server.active){
                 mainMenu.menuState = MenuState::HOST_OPTIONS;

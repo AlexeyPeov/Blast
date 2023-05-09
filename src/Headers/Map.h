@@ -20,6 +20,10 @@
 
 #include "Server.h"
 
+
+const int MAX_MAP_WIDTH = 50;
+const int MAX_MAP_HEIGHT = 50;
+
 struct Wall {
     sf::Sprite sprite;
     int hp = 4;
@@ -47,6 +51,7 @@ struct Map {
     sf::Texture a_site_texture;
     sf::Texture plant_anim_texture;
     sf::Texture defuse_anim_texture;
+    sf::RenderTexture shadowCastTexture;
 
     int width = 0;
     int height = 0;

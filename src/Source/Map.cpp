@@ -64,6 +64,8 @@ void Map::init_map_textures() {
     plant_animation = Animation(plant_anim_sprite, 1200 / 30, 40, 30, plant_time / 30);
     defuse_animation = Animation(defuse_anim_sprite, 1200 / 30, 40, 30, defuse_time / 30);
 
+    shadowCastTexture.create(MAX_MAP_WIDTH * 40, MAX_MAP_HEIGHT * 40);
+
 }
 
 void Map::init_map_sounds(){
@@ -433,6 +435,7 @@ void Map::update_players(Client &client) {
 
             if(object::is_bomb_defused(object)){
                 bomb_defused = true;
+                main_player.defused_bomb = true;
             }
 
             if(players[object.id].reloading){
@@ -513,8 +516,8 @@ void Map::update_player(Client &client) {
         if(object::is_shooting(client.object)){
             init_missile(main_player, client.object);
         }
-        main_player.plant_bomb(a_site_sprite, bomb.second, object::is_shooting(client.object), plant_animation);
-        main_player.defuse_bomb(bomb.second, object::is_shooting(client.object), defuse_animation);
+        main_player.plant_bomb(a_site_sprite, bomb.second, main_player.shooting, plant_animation);
+        main_player.defuse_bomb(bomb.second, main_player.shooting, defuse_animation);
 
         if(main_player.planted_bomb && main_player.has_bomb){
             main_player.has_bomb = false;
