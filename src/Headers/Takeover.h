@@ -5,12 +5,13 @@
 
 const uint8_t BEFORE_ROUND_TIME_SECONDS = 5;
 const uint8_t AFTER_ROUND_TIME_SECONDS = 4;
-const uint8_t ROUND_TIME_SECONDS =  165;//165;
+const uint8_t ROUND_TIME_SECONDS =  140;//165; - 2.45
 const uint8_t TIME_TO_DEFUSE_BOMB = 45;
 
 const uint8_t BOMB_TICK_TIMER = 72;
-const uint8_t CHANGE_TEAM_ROUND = 17;
-const uint8_t ROUNDS_NEEDED_TO_WIN = 16;
+const uint8_t CHANGE_TEAM_ROUND = 10;
+const uint8_t ROUNDS_NEEDED_TO_WIN = 9;
+const uint8_t AFTER_MAX_ROUND = 17;
 
 
 const uint8_t TEAM_T = 1;
@@ -285,7 +286,7 @@ struct Takeover {
                 team_won = TEAM_CT;
             }
 
-            if (current_round == 31 && score_t == score_ct) {
+            if (current_round == AFTER_MAX_ROUND && score_t == score_ct) {
                 game_over = true;
                 is_before_round = false;
                 is_in_round = false;

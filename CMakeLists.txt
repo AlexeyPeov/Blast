@@ -121,7 +121,10 @@ add_executable(BLAST WIN32
         src/Source/Player.cpp
         src/Source/Server.cpp
         #src/Source/Application.cpp
-        src/Source/RayCaster.cpp src/Headers/Takeover.h)
+        src/Source/RayCaster.cpp
+        src/Headers/Takeover.h
+        src/Source/PathFinder.cpp
+        )
 
 if(WIN32)
     add_custom_command(TARGET BLAST POST_BUILD

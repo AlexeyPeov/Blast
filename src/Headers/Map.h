@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
+#include "PathFinder.h"
 //#include <iostream>
 #include <filesystem>
 #include <valarray>
@@ -31,13 +32,6 @@ struct Wall {
 
 std::string working_dir();
 
-struct Vector2fHash {
-    std::size_t operator()(const sf::Vector2f& v) const {
-        std::size_t h1 = std::hash<float>{}(v.x);
-        std::size_t h2 = std::hash<float>{}(v.y);
-        return h1 ^ (h2 << 1);
-    }
-};
 
 struct Map {
 
