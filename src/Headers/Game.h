@@ -1,12 +1,18 @@
 #pragma once
 
-#include <SFML/Graphics.hpp>
-#include "RayCaster.h"
-#include "Server.h"
-#include "MainMenu.h"
 #include <chrono>
 #include <thread>
+
+#include <SFML/Graphics.hpp>
+
+#include "Enums.h"
+#include "Map.h"
+#include "Server.h"
+#include "Client.h"
+#include "MainMenu.h"
 #include "Takeover.h"
+#include "RayCaster.h"
+
 
 struct Resolution {
     uint32_t x = 1280;
@@ -37,7 +43,7 @@ private:
     sf::Font font;
     sf::View view;
     Server server;
-    Client client = Client();
+    Client client = Client(obj::generate_random_id(), "", "", 0);
 
     sf::Shader shader;
 
@@ -69,7 +75,7 @@ public:
         map.init_map_textures();
         mainMenu = MainMenu(font, videoMode, client, multiplayerAction, map, gameMode);
         map.init_map_sounds();
-        takeover = Takeover(&map, &client);
+        takeover = Takeover(map);
         if (!shader.loadFromFile(working_dir() + "/shaders/invert_colors.frag", sf::Shader::Fragment)) {
                 std::cerr << "Failed to load shader\n";
         }
@@ -80,7 +86,7 @@ public:
 
     void death_match();
 
-    void takeover_game_mode();
+    void takeover_game_mode(bool online);
 
     void handleMultiplayerAction();
 
@@ -97,4 +103,6 @@ public:
     void handleEvents(sf::Event &e);
 
     void draw_team_won(int team);
+
+    void handle_camera_movement(sf::Vector2f player_position, sf::Vector2i mouse_position);
 };

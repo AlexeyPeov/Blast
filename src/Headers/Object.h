@@ -1,159 +1,161 @@
-#pragma once
+#ifndef OBJECT_H
+#define OBJECT_H
+
 
 #include <vector>
 #include <cstring>
 #include <string>
 #include <iostream>
-#include <SFML/Network.hpp>
 #include <random>
 
-const short nickname_length = 15;
+#include <SFML/Network.hpp>
+#include <SFML/Graphics.hpp>
 
 
-struct Object {
-    sf::Uint64 id = 0;
-    char nickname[nickname_length] = "anonymous";
-    int hp = 100;
-    short in_game_action = 0;
-    sf::Uint8 team = 1;
-    int kills = 0;
-    int deaths = 0;
-    float pos_x = 0;
-    float pos_y = 0;
-    float rotation = 0;
-    float missile_rotation = 0;
-    sf::Uint8 main_menu_action = 0;
-    sf::Uint64 tick = 0;
-    sf::Uint32 sync = 0;
+#include "Constants.h"
+#include "SpriteMethods.h"
+
+std::string working_dir();
+
+static std::mt19937 generator(std::random_device{}());
+
+struct PlayerEvent{
+    uint32 up_button_pressed : 1;
+    uint32 down_button_pressed : 1;
+    uint32 left_button_pressed : 1;
+    uint32 right_button_pressed : 1;
+    uint32 walk_silently_button_pressed : 1;
+    uint32 shoot_button_pressed : 1;
+    uint32 event_button_pressed : 1;
+    uint32 reload_button_pressed : 1;
+    uint32 drop_button_pressed : 1;
+    uint32 quit_button_pressed : 1;
+    uint32 change_team_to_t_button_pressed : 1;
+    uint32 change_team_to_ct_button_pressed : 1;
+    uint32 chose_map_1_button_pressed : 1;
+    uint32 chose_map_2_button_pressed : 1;
+    uint32 chose_map_3_button_pressed : 1;
+    uint32 chose_deathmatch_button_pressed : 1;
+    uint32 chose_takeover_button_pressed : 1;
+    uint32 ready_button_pressed : 1;
+    uint32 rotation_whole_number : 9;
+    uint32 rotation_decimal_number : 9;
+
 };
-//  2^5 = 32 - current_round 0-4
-//  2^4 = 15 - team_t_score  5-8
-//  2^4 = 15 - team_ct_score 9-12
-//  13 - is_before_round
-//  14 - is_in_round
-//  15 - is_retake
-//  16 - is_after_round
-//  2^8 - time(seconds)     17-24
+
+struct PlayerState{
+    uint16 has_bomb : 1;
+    uint16 planting_bomb : 1;
+    uint16 defusing_bomb : 1;
+    uint16 planted_bomb : 1;
+    uint16 defused_bomb : 1;
+    uint16 dropping_bomb : 1;
+    uint16 reloading : 1;
+    uint16 running : 1;
+    uint16 walking : 1;
+    uint16 shooting : 1;
+};
+
+struct MainMenuEvent{
+    uint8 map1 : 1;
+    uint8 map2 : 1;
+    uint8 map3 : 1;
+    uint8 death_match_game_mode : 1;
+    uint8 takeover_game_mode : 1;
+    uint8 host : 1;
+    uint8 ready_to_play : 1;
+    uint8 in_game : 1;
+
+};
+
+struct Sync{
+    uint64 current_round : 5;
+    uint64 team_t_score : 5;
+    uint64 team_ct_score : 5;
+    uint64 is_before_round : 1;
+    uint64 is_in_round : 1;
+    uint64 is_retake : 1;
+    uint64 is_after_round : 1;
+    uint64 round_seconds_left : 8;
+};
+
+struct PlayerObject {
+    uint64 id = 0;
+    char nickname[NICKNAME_LENGTH] = "Anon";
+    int32 hp = 100;
+    uint8 team = 1;
+    int16 kills = 0;
+    int16 deaths = 0;
+    int16 mag_ammo = 0;
+    int16 leftover_ammo = 0;
+    float32 pos_x = 0;
+    float32 pos_y = 0;
+    float32 rotation = 0;
+    uint64 tick = 0;
+    PlayerState player_state = {0};
+    MainMenuEvent main_menu_event = {0};
+    Sync sync = {0};
 
 
-namespace object {
+
+    uint32 shoot_timer = 0;
+    uint32 plant_or_defuse_timer = 0;
+    uint32 reload_timer = 0;
+};
+
+struct MissileObject{
+    uint64 id = 0;
+    bool life = true;
+    uint64 player_who_shot_id = 0;
+    float32 rotation_degree = 0.0;
+
+    float32 position_x = 0.0;
+    float32 position_y = 0.0;
+
+    float32 previous_position_x = 0.0;
+    float32 previous_position_y = 0.0;
+};
+
+struct BombObject{
+    uint64 player_id = 0;
+    bool life = true; // todo : implement
+    uint64 player_who_shot = 0;
+
+    float32 position_x = 0.0;
+    float32 position_y = 0.0;
+
+    float32 previous_position_x = 0.0;
+    float32 previous_position_y = 0.0;
+};
 
 
-    void synchronize_host(
-            Object &host,
-            uint8_t current_round,
-            uint8_t team_t_score,
-            uint8_t team_ct_score,
-            bool is_before_round,
-            bool is_in_round,
-            bool is_retake,
-            bool is_after_round,
-            uint8_t seconds
-            );
 
-    void extract_sync_values(
-            const Object &object,
-            uint8_t &current_round,
-            uint8_t &team_t_score,
-            uint8_t &team_ct_score,
-            bool &is_before_round,
-            bool &is_in_round,
-            bool &is_retake,
-            bool &is_after_round,
-            uint8_t &seconds
-    );
+namespace obj {
 
-    void synchronize_with_host(Object &host, Object &not_host);
+    void set_default_values(PlayerObject &object);
 
-    Object find_host(std::vector<Object> objects);
+    int16 which_map_is_chosen(PlayerObject &player_object);
 
-    uint8_t extract_seconds_left(const Object &object);
+    int16 which_game_mode_is_chosen(PlayerObject &player_object);
 
-    void wants_or_needs_to_reload(Object &object);
+    void copy_string_to_nickname(std::string &string, PlayerObject &object);
 
-    void doesnt_want_or_need_to_reload(Object &object);
+    sf::Packet& operator << (sf::Packet& packet, const PlayerEvent &player_event);
 
-    bool does_want_or_need_to_reload(Object &object);
-
-    void run(Object &object);
-
-    void walk(Object &object);
-
-    bool is_running(Object &object);
-
-    void shoot(Object &object);
-
-    void dont_shoot(Object &object);
-
-    bool is_shooting(Object &object);
-
-    void reload_start(Object &object);
-
-    void reload_end(Object &object);
-
-    bool is_reloading(Object &object);
+    sf::Packet& operator >> (sf::Packet& packet, PlayerEvent &player_event);
 
 
-    void has_bomb(Object &object);
 
-    void doesnt_have_bomb(Object &object);
+    sf::Packet& operator << (sf::Packet& packet, const PlayerObject &object);
 
-    bool is_bomb_carrier(Object &object);
+    sf::Packet& operator >> (sf::Packet& packet, PlayerObject& object);
 
-    bool drops_bomb(Object &object);
+    sf::Packet& operator << (sf::Packet& packet, const MissileObject &object);
 
-    void drop_bomb(Object &object);
-    void dont_drop_bomb(Object &object);
+    sf::Packet& operator >> (sf::Packet& packet, MissileObject& object);
 
-    void plant_bomb(Object & object);
-    void not_plant_bomb(Object & object);
+    uint64 generate_random_id();
 
-    bool is_bomb_planted(Object &object);
-
-    void defused(Object &object);
-    void not_defused(Object &object);
-
-    bool is_bomb_defused(Object &object);
-
-    void choose_map_1(Object &object);
-    void choose_map_2(Object &object);
-    void choose_map_3(Object &object);
-
-    void choose_map(Object &object, short map);
-
-    void unchoose_maps(Object &object);
-
-    void choose_death_match(Object &object);
-    void choose_takeover(Object &object);
-    void choose_game_mode(Object &object, short gamemode);
-
-    void ready(Object &object);
-
-    bool is_ready(Object &object);
-
-    void set_host(Object &object);
-    bool is_host(Object & object);
-    void set_not_host(Object &object);
-
-    short which_map_is_chosen(Object &object);
-    short which_game_mode_is_chosen(Object &object);
-
-
-    std::vector<char> serialize_object(const Object& object);
-
-    std::vector<char> serialize_objects(const std::vector<Object>& objects);
-
-    void deserialize_objects(const std::vector<char>& data, std::vector<Object>& objects);
-
-    void deserialize_object(const std::vector<char>& data, Object & object);
-
-    void copy_string_to_nickname(std::string &string, Object &object);
-
-    void reset(Object &object);
-
-    sf::Packet& operator<<(sf::Packet& packet, const Object& object);
-
-    sf::Packet& operator>>(sf::Packet& packet, Object& object);
-
-    uint64_t generate_random_id();
 }
+
+#endif

@@ -1,53 +1,41 @@
-#pragma once
+#ifndef TAKEOVER_H
+#define TAKEOVER_H
 
 #include <SFML/Graphics.hpp>
-#include "Map.h"
 
-const uint8_t BEFORE_ROUND_TIME_SECONDS = 5;
-const uint8_t AFTER_ROUND_TIME_SECONDS = 4;
-const uint8_t ROUND_TIME_SECONDS =  140;//165; - 2.45
-const uint8_t TIME_TO_DEFUSE_BOMB = 45;
-
-const uint8_t BOMB_TICK_TIMER = 72;
-const uint8_t CHANGE_TEAM_ROUND = 10;
-const uint8_t ROUNDS_NEEDED_TO_WIN = 9;
-const uint8_t AFTER_MAX_ROUND = 17;
-
-
-const uint8_t TEAM_T = 1;
-const uint8_t TEAM_CT = 2;
+#include "Object.h"
 
 struct TeamOnline{
-    Object* objects[5] = {nullptr};
+    Player* players[5] = {nullptr};
 
 
-    void insert(Object &object){
-        for(auto &obj : objects){
-            if(obj == nullptr){
-                obj = &object;
+    void insert(Player &player){
+        for(auto &pl : players){
+            if(pl == nullptr){
+                pl = &player;
                 return;
             }
         }
     }
 
     void clear(){
-        for (auto  &obj : objects){
+        for (auto  &obj : players){
             obj = nullptr;
         }
     }
 
-    static sf::Vector2f get_spawn_position(Object &object){
+    static sf::Vector2f get_spawn_position(Player &object){
         sf::Vector2f position = {0,0};
 
         float default_spawn_x = 0;
         float default_spawn_y = 0;
 
         if(object.team == TEAM_T){
-            default_spawn_x = 188;
-            default_spawn_y = 1790;
+//            default_spawn_x = 188;
+//            default_spawn_y = 1790;
 
-//            default_spawn_x = 280;
-//            default_spawn_y = 445;
+            default_spawn_x = 710;
+            default_spawn_y = 445;
         } else if(object.team == TEAM_CT){
             default_spawn_x = 310;
             default_spawn_y = 445;
@@ -56,7 +44,8 @@ struct TeamOnline{
         return position;
     }
     static sf::Vector2f get_bomb_spawn_position(){
-        return sf::Vector2f {188 + 40, 1790};
+//        return sf::Vector2f {188 + 40, 1790};
+        return sf::Vector2f { 710, 445};
     }
 };
 
@@ -67,7 +56,6 @@ struct TeamOffline{
 struct Takeover {
 
     Map *map;
-    Client *client;
 
     uint8_t current_round = 1;
     bool game_started = false;
@@ -103,74 +91,51 @@ struct Takeover {
     TeamOffline team_ct_offline;
 
 
-    explicit Takeover(Map *map, Client *client) {
-        this->map = map;
-        this->client = client;
+    Takeover(Map &map) {
+        this->map = &map;
     }
 
     Takeover(){}
 
     ~Takeover(){}
 
-    void init(){
-        if(client->active){
-            int size = client->objects.size();
-            for (int i = 0; i < size; i++){
-                if(client->objects[i].team == TEAM_T){
-                    team_t_online.insert(client->objects[i]);
-                } else if(client->objects[i].team == TEAM_CT){
-                    team_ct_online.insert(client->objects[i]);
-                }
+    void init() {
+        for (auto &[id, object] : map->players){
+            if(object.team == TEAM_T){
+                team_t_online.insert(object);
+            } else if(object.team == TEAM_CT){
+                team_ct_online.insert(object);
             }
-
-            if(client->object.team == TEAM_T){
-                team_t_online.insert(client->object);
-            } else if(client->object.team == TEAM_CT){
-                team_ct_online.insert(client->object);
-            }
-
-        } else {
-            this->team_t_offline = {};
-            this->team_ct_offline = {};
-            // todo : offline implementation
         }
     }
 
     void before_round() {
 
-        if(!is_reset_for_new_round){
-            reset_for_new_round();
+        map->spawn_bomb(TeamOnline::get_bomb_spawn_position());
+
+        cool_down(BEFORE_ROUND_TIME_SECONDS, &is_before_round);
+
+        for(auto &[id, object] : map->players){
+            sf::Vector2f spawn = TeamOnline::get_spawn_position(object);
+            object.sprite.setPosition(spawn);
+            //std::cout << "BEFORE ROUND SET POS " << spawn.x << " " << spawn.y << "\n";
+            object.hp = 100;
+            object.mag_ammo = MAG_CAPACITY;
+            object.leftover_ammo = MAX_AMMO;
+           // object.sync = sync_object();
         }
 
-        if (map->main_player.team_t) {
-            map->main_player.sprite.setPosition(team_t_online.get_spawn_position(client->object));
-        } else {
-            map->main_player.sprite.setPosition(team_ct_online.get_spawn_position(client->object));
-        }
-        map->main_player.freeze();
-
-        map->main_player.hp = 100;
-        map->main_player.mag_ammo = mag_capacity;
-        map->main_player.leftover_ammo = max_ammo;
-
-        map->spawn_bomb(team_t_online.get_bomb_spawn_position());
-
-
-        if(is_host(client->object)){
-            cool_down(BEFORE_ROUND_TIME_SECONDS, &is_before_round);
-        } else {
-            cool_down(extract_seconds_left(find_host(client->objects)), &is_in_round);
-        }
     }
 
     void in_round() {
-        if (!map->team_t_alive_online(*client)) {
+        if (!map->team_t_alive()) {
+            std::cout << "TAKEOVER SAYS TEAM T IS DEAD\n";
             is_in_round = false;
             score_ct++;
             current_round_team_won = TEAM_CT;
             some_team_won = true;
-        }
-        if (!map->team_ct_alive_online(*client)) {
+        } else if (!map->team_ct_alive()) {
+            std::cout << "TAKEOVER SAYS TEAM CT IS DEAD\n";
             is_in_round = false;
             score_t++;
             some_team_won = true;
@@ -183,16 +148,16 @@ struct Takeover {
             is_retake = true;
             map->bomb_planted_sound.play();
         }
-        if(is_host(client->object)){
-            cool_down(ROUND_TIME_SECONDS, &is_in_round);
-        } else {
-            cool_down(extract_seconds_left(find_host(client->objects)), &is_in_round);
-        }
+//        for(auto &[id, object] : objects){
+//            object.sync = sync_object();
+//        }
+        cool_down(ROUND_TIME_SECONDS, &is_in_round);
+
     }
 
     void retake() {
         ready++;
-        if (!map->team_ct_alive_online(*client)) {
+        if (!map->team_ct_alive()) {
             is_retake = false;
             score_t++;
             some_team_won = true;
@@ -213,11 +178,12 @@ struct Takeover {
             map->bomb_defused_sound.play();
         }
 
-        if(is_host(client->object)){
-            cool_down(TIME_TO_DEFUSE_BOMB, &is_retake);
-        } else {
-            cool_down(extract_seconds_left(find_host(client->objects)), &is_in_round);
-        }
+//        for(auto &[id, object] : map->players){
+//            object.sync = sync_object();
+//        }
+
+        cool_down(TIME_TO_DEFUSE_BOMB_SECONDS, &is_retake);
+
     }
 
     void after_round() {
@@ -243,11 +209,13 @@ struct Takeover {
                 current_round_team_won = 0;
             }
         }
-        if(is_host(client->object)){
-            cool_down(AFTER_ROUND_TIME_SECONDS, &is_after_round);
-        } else {
-            cool_down(extract_seconds_left(find_host(client->objects)), &is_in_round);
-        }
+
+        cool_down(AFTER_ROUND_TIME_SECONDS, &is_after_round);
+
+//        for(auto &[id, object] : objects){
+//            object.sync = sync_object();
+//        }
+
         is_reset_for_new_round = false;
     }
 
@@ -263,7 +231,9 @@ struct Takeover {
 
             bomb_planted = false;
             map->reset_for_new_round();
-            map->main_player.clear_bomb_related_flags();
+            for(auto & player : map->players){
+                player.second.clear_bomb_related_flags();
+            }
 
 
             if (score_t == ROUNDS_NEEDED_TO_WIN) {
@@ -296,37 +266,33 @@ struct Takeover {
             }
 
             if(current_round == CHANGE_TEAM_ROUND){
-                change_teams();
+                for(auto &[id, object] : map->players){
+                    change_teams(object);
+                }
+                uint8_t temp = score_t;
+                score_t = score_ct;
+                score_ct = temp;
+
+                TeamOnline temp_team = team_t_online;
+                team_t_online = team_ct_online;
+                team_ct_online = temp_team;
                 std::cout << "CHANGED TEAMS\n";
+            }
+
+            for(auto &[id, object] : map->players){
+                //object.sync = sync_object();
+                object.player_state = {0};
             }
             is_reset_for_new_round = true;
         }
     }
 
-    void change_teams(){
-
-        config_sprite(map->team2_player_sprite);
-        config_sprite(map->team1_player_sprite);
-
-        for(auto &[id, p] : map->players){
-            if(p.team_t){
-                p.sprite = map->team2_player_sprite;
-            } else {
-                p.sprite = map->team1_player_sprite;
-            }
-        }
-
-        if(map->main_player.team_t){
-            map->main_player.team_t = false;
-            map->main_player.sprite = map->team2_player_sprite;
+    void change_teams(Player &player) {
+        if(player.team == TEAM_T){
+            player.team = TEAM_CT;
         } else {
-            map->main_player.team_t = true;
-            map->main_player.sprite = map->team1_player_sprite;
+            player.team = TEAM_T;
         }
-
-        uint8_t temp = score_t;
-        score_t = score_ct;
-        score_ct = temp;
     }
 
     void reset(){
@@ -368,49 +334,43 @@ struct Takeover {
         }
     }
 
-    void synchronize_with_host(){
-        Object host = find_host(client->objects);
-        if(is_host(host)){
-            if(!game_over){
-                client->object.sync = host.sync;
-            }
+    Sync sync_object() {
+        return Sync {
+                .current_round  = current_round,
+                .team_t_score  = score_t,
+                .team_ct_score = score_ct,
+                .is_before_round = is_before_round,
+                .is_in_round  = is_in_round,
+                .is_retake = is_retake,
+                .is_after_round = is_after_round,
+                .round_seconds_left = round_seconds_left,
+        };
+    }
+
+    void sync_takeover(Sync &sync){
+        current_round = sync.current_round;
+        score_t = sync.team_t_score;
+        score_ct = sync.team_ct_score;
+        is_before_round = sync.is_before_round;
+        is_in_round = sync.is_in_round;
+        is_retake = sync.is_retake;
+        is_after_round = sync.is_after_round;
+        round_seconds_left = sync.round_seconds_left;
+    }
+
+    void update() {
+        if (is_before_round) {
+            before_round();
+        } else if (is_in_round) {
+            in_round();
+        } else if (is_retake) {
+            retake();
+        } else if (is_after_round) {
+            after_round();
         } else {
-            if(client->active){
-                client->disconnect();
-            }
+            reset_for_new_round();
         }
-        object::extract_sync_values(client->object, current_round, score_t, score_ct, is_before_round, is_in_round, is_retake, is_after_round, round_seconds_left);
-    }
-
-    void synchronize_host(Object &host){
-        object::synchronize_host(host,current_round, score_t, score_ct, is_before_round, is_in_round, is_retake, is_after_round, round_seconds_left);
-    }
-
-    void update(){
-        if(!game_started){
-            init();
-            game_started = true;
-        }
-        if(!game_over){
-            if(is_before_round){
-                before_round();
-            } else if(is_in_round){
-                in_round();
-            } else if(is_retake){
-                retake();
-            } else if(is_after_round){
-                after_round();
-            } else {
-                reset_for_new_round();
-
-                // this is a very bad way of doing this ... too bad!
-                if(map->main_player.team_t && client->object.team != TEAM_T){
-                    client->object.team = TEAM_T;
-                } else if(!map->main_player.team_t && client->object.team == TEAM_T) {
-                    client->object.team = TEAM_CT;
-                }
-            }
-        }
-
     }
 };
+
+#endif

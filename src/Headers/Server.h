@@ -1,26 +1,47 @@
-#pragma once
-#include <SFML/Network.hpp>
+#ifndef SERVER_H
+#define SERVER_H
+
 #include <iostream>
 #include <string>
 #include <csignal>
+
+#include <SFML/Network.hpp>
 #include "Client.h"
+#include "Map.h"
+#include "Takeover.h"
+
+
+
+
 //#define SERVER_DEBUG_SEND // if on,  prints server debug info into console
 //#define SERVER_DEBUG_RECEIVE
 
-using namespace object;
+using namespace obj;
 
 struct Server {
     sf::UdpSocket server_socket;
-    std::vector<std::unique_ptr<Client>> clients;
-    std::unordered_map<uint64_t, Object> objects;
-    std::unordered_map<uint64_t, std::pair<std::unordered_map<uint64_t, Object>, uint8_t>> packets;
+
+    std::unordered_map<uint64, std::unique_ptr<Client>> clients;
+
+    sf::Uint64 host_client_id = 0;
+
+    std::unordered_map<uint64_t, PlayerObject> player_objects;
+    std::unordered_map<uint64_t, MissileObject> missile_objects;
+
+    //std::unordered_map<uint64_t, std::pair<std::unordered_map<uint64_t, Object>, uint8_t>> packets;
     bool active = false;
     uint64_t tick = 0;
 
     // receive data
     // run game loop
     // send data
+    Map map;
+    Takeover takeover;
 
+
+    Server() = default;
+
+    ~Server() = default;
 
     bool set_listener();
 
@@ -29,12 +50,14 @@ struct Server {
     bool send_data();
 
 
-
-    // int assign_id();
-
-    // static bool send_all_bytes(const void* data, std::size_t size, sf::UdpSocket &socket);
-    void printObjects();
-
     void disconnect();
+
+    void play_tick();
+
+    void death_match();
+
+    void takeover_game_mode();
+
 };
 
+#endif

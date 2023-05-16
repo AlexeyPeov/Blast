@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MY_ENUMS_H
+#define MY_ENUMS_H
 
 
 enum Round{
@@ -54,3 +55,5 @@ enum ApplicationState {
     MENU,
     GAME,
 };
+
+#endif

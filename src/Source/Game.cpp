@@ -107,9 +107,11 @@ void Game::run() {
         window.clear();
         if (server.active) {
             server.receive_data();
+            server.play_tick();
         }
         if (client.active) {
             client.receive_data();
+            map.update_online(client.player_objects, client.missile_objects);
         }
 
 
@@ -119,42 +121,21 @@ void Game::run() {
         }
         else  {
 
-            if(!gained_focus){
-                dont_shoot(client.object);
-            }
 
             if (gameMode == GameMode::DEATH_MATCH) {
                 death_match();
             } else if(gameMode == GameMode::TAKEOVER){
-                takeover_game_mode();
+                takeover_game_mode(false);
+                if(client.active){
+                    takeover.sync_takeover(client.player_object.sync);
+                }
             }
 
-//            todo : combine update and draw
-//
-//            map.update_and_draw_player(client);
-//            map.update_and_draw_players(client);
-//            map.update_and_draw_missiles();
-//            map.update_and_draw_explosions();
-
-            map.update_player(client);
-            object::dont_shoot(client.object);
-            map.update_players(client);
-            map.update_missiles();
-            map.update_explosions();
-            map.main_player.move_on_map(view, window, client, gameState, gained_focus, 2.0);
-
-
-            map.check_collision_missiles_walls_players();
-            map.check_collision_player_players();
-            map.check_collision_players_ammo();
-            map.check_collision_players_bomb();
-            map.check_collision_walls_players();
-
-
-            map.draw_players(window);
+            map.play_tick_and_draw(window, window.mapPixelToCoords(sf::Mouse::getPosition(window)), gained_focus);
 
             map.shadowCastTexture.clear(sf::Color::Transparent);
-            RayCaster::castRays(map.shadowCastTexture, map.main_player.sprite.getPosition(), map.walls_for_collision_map, map.main_player.sprite.getRotation() - 157.5);
+            RayCaster::castRays(map.shadowCastTexture, map.players[map.main_player_id].sprite.getPosition(),
+                                map.walls_for_collision_map, map.players[map.main_player_id].sprite.getRotation() - 157.5);
 
 
             sf::Sprite visibleAreaSprite;
@@ -167,28 +148,28 @@ void Game::run() {
             map.draw_floors(window);
 
             map.draw_dropped_ammo(window);
-            if (map.main_player.hp > 0) {
-                window.draw(map.main_player.sprite);
+            if (map.players[map.main_player_id].hp > 0) {
+                window.draw(map.players[map.main_player_id].sprite);
             }
 
             map.draw_walls(window);
-            map.draw_missiles(window);
-            map.draw_explosions(window);
             map.draw_plant_defuse_animations(window);
+            map.draw_explosions(window);
+            //map.draw_missiles(window);
+            //map.draw_explosions(window);
 
-
-            map.main_player.transfer_data_to(client.object);
+            //map.main_player.transfer_data_to(client.object);
             handleKeyBindings();
 
-
-            if(gameMode == TAKEOVER){
-                if(!is_host(client.object)){
-                    takeover.synchronize_with_host();
-
-                } else {
-                    takeover.synchronize_host(client.object);
-                }
-            }
+            handle_camera_movement(map.players[map.main_player_id].sprite.getPosition(), sf::Mouse::getPosition(window));
+//            if(gameMode == TAKEOVER){
+//                if(!is_host(client.object)){
+//                    takeover.synchronize_with_host();
+//
+//                } else {
+//                    takeover.synchronize_host(client.object);
+//                }
+//            }
 
             if (gameState == GameState::IN_GAME_PAUSE) {
                // mainMenu.draw_in_pause(window, gameState);
@@ -198,6 +179,7 @@ void Game::run() {
         }
 
         if (client.active) {
+            map.players[map.main_player_id].transfer_data_to(client.player_event, gained_focus);
             client.send_data();
         }
         if (server.active) {
@@ -267,22 +249,17 @@ void Game::death_match() {
         } else {
 
 
-            if (map.main_player.hp <= 0) {
+           /* if (map.main_player.hp <= 0) { // todo death match
                 map.main_player.sprite.setPosition(map.random_non_wall_position());
                 client.object.pos_x = map.main_player.sprite.getPosition().x;
                 client.object.pos_y = map.main_player.sprite.getPosition().y;
 
                 map.main_player.hp = 100;
-                map.main_player.mag_ammo = mag_capacity;
-                map.main_player.leftover_ammo = max_ammo;
-
+                map.main_player.mag_ammo = MAG_CAPACITY;
+                map.main_player.leftover_ammo = MAX_AMMO;
                 client.object.hp = 100;
-               // client.object.bullets = mag_capacity + max_ammo;
-            }
-
-
+            }*/
         }
-
 
     }
 
@@ -312,7 +289,7 @@ void Game::death_match() {
     // return
 }
 
-void Game::takeover_game_mode() {
+void Game::takeover_game_mode(bool online) {
 
     // todo: DONT FORGET TO SET CLIENT OBJECT TEAM TO OTHER TEAM IN MIDDLE GAME
 
@@ -417,7 +394,7 @@ void Game::draw_team_won(int team){
 
     menu_rect_in_game.setFillColor(sf::Color(128, 128, 128, 200));
     menu_rect_in_game.setPosition(viewCenter);
-    center_rect_shape(menu_rect_in_game);
+    center_rect_origin(menu_rect_in_game);
     // todo: steps while dead in multiplayer
     // todo: sync fucking players already, jesus
     MainMenu::setUpText(team_won_text, 36, viewCenter.x - 50, viewCenter.y - 40, sf::Color::White);
@@ -428,8 +405,8 @@ void Game::draw_team_won(int team){
         replay_text.setFillColor(sf::Color::Yellow);
         if (Mouse::clicked()) {
             gameState = GameState::MAIN_MENU;
-            object::ready(client.object);
-            client.object.in_game_action = 0;
+            client.player_event.ready_button_pressed = false;
+            client.player_object = PlayerObject();
             takeover.reset();
             if(server.active){
                 mainMenu.menuState = MenuState::HOST_OPTIONS;
@@ -447,7 +424,7 @@ void Game::draw_team_won(int team){
             server.disconnect();
             client.disconnect();
             takeover.reset();
-            object::reset(client.object);
+            client.player_object = PlayerObject();
         }
     }
     window.draw(menu_rect_in_game);
@@ -465,22 +442,22 @@ void Game::draw_score_menu(){
     float team_1_text_offset = -40;
     float team_2_text_offset = -40;
 
-    if (client.object.team == 1) {
-        sf::Text text(std::string(client.object.nickname) + " " + std::to_string(client.object.kills) + " " + std::to_string(client.object.deaths) + " ", font);
-        text.setScale(0.3, 0.3);
-        MainMenu::setUpText(text, 24, viewCenter.x - 120 + 50, viewCenter.y + team_1_text_offset, sf::Color::White);
-        team_1_text_offset += 20;
-        team_1_text[client.object.id] = text;
-    } else {
-        sf::Text text(std::string(client.object.nickname) + " " + std::to_string(client.object.kills) + " " + std::to_string(client.object.deaths) + " ", font);
-        text.setScale(0.3, 0.3);
-        MainMenu::setUpText(text, 24, viewCenter.x - 15 + 50, viewCenter.y + team_2_text_offset, sf::Color::White);
-        team_2_text_offset += 20;
-        team_2_text[client.object.id] = text;
-    }
+//    if (client.player_object.team == 1) {
+//        sf::Text text(std::string(client.player_object.nickname) + " " + std::to_string(client.player_object.kills) + " " + std::to_string(client.player_object.deaths) + " ", font);
+//        text.setScale(0.3, 0.3);
+//        MainMenu::setUpText(text, 24, viewCenter.x - 120 + 50, viewCenter.y + team_1_text_offset, sf::Color::White);
+//        team_1_text_offset += 20;
+//        team_1_text[client.player_object.id] = text;
+//    } else {
+//        sf::Text text(std::string(client.player_object.nickname) + " " + std::to_string(client.player_object.kills) + " " + std::to_string(client.player_object.deaths) + " ", font);
+//        text.setScale(0.3, 0.3);
+//        MainMenu::setUpText(text, 24, viewCenter.x - 15 + 50, viewCenter.y + team_2_text_offset, sf::Color::White);
+//        team_2_text_offset += 20;
+//        team_2_text[client.player_object.id] = text;
+//    }
 
-    for (auto &player: client.objects) {
-        if (player.team == 1) {
+    for (auto &player: client.player_objects) {
+        if (player.team == TEAM_T) {
             sf::Text text(std::string(player.nickname) + " " + std::to_string(player.kills) + " " + std::to_string(player.deaths) + " ", font);
             MainMenu::setUpText(text, 24, viewCenter.x - 120+ 50, viewCenter.y + team_1_text_offset, sf::Color::White);
             text.setScale(0.3, 0.3);
@@ -507,7 +484,7 @@ void Game::draw_score_menu(){
     sf::RectangleShape score_rect = sf::RectangleShape(sf::Vector2f(300, 200));
     score_rect.setFillColor(sf::Color(128, 128, 128, 50));
     score_rect.setPosition(viewCenter);
-    center_rect_shape(score_rect);
+    center_rect_origin(score_rect);
 
     window.draw(score_rect);
     window.draw(text1);
@@ -537,19 +514,19 @@ void Game::draw_user_interface(){
     sf::RectangleShape hp_rect = sf::RectangleShape(sf::Vector2f(120, 50));
     hp_rect.setFillColor(sf::Color(5, 5, 5, 100));
     hp_rect.setPosition(low_left_corner);
-    center_rect_shape(hp_rect);
+    center_rect_origin(hp_rect);
 
 
     sf::RectangleShape ammo_rect = sf::RectangleShape(sf::Vector2f(120, 50));
     ammo_rect.setFillColor(sf::Color(5, 5, 5, 100));
     ammo_rect.setPosition(low_right_corner);
-    center_rect_shape(ammo_rect);
+    center_rect_origin(ammo_rect);
 
-    sf::Text hp_text( "+  " + std::to_string(map.main_player.hp), font);
+    sf::Text hp_text( "+  " + std::to_string(map.players[map.main_player_id].hp), font);
     hp_text.setScale(0.3, 0.3);
     MainMenu::setUpText(hp_text, 60, low_left_corner.x - 20, low_left_corner.y - 12, sf::Color::White);
 
-    sf::Text ammo_text( std::to_string(map.main_player.mag_ammo) + " /" + std::to_string(map.main_player.leftover_ammo), font);
+    sf::Text ammo_text( std::to_string(map.players[map.main_player_id].mag_ammo) + " /" + std::to_string(map.players[map.main_player_id].leftover_ammo), font);
     ammo_text.setScale(0.3, 0.3);
     MainMenu::setUpText(ammo_text, 60, low_right_corner.x - 20, low_right_corner.y - 12, sf::Color::White);
 
@@ -569,7 +546,7 @@ void Game::draw_user_interface(){
 
         rounds_won_rect.setFillColor(sf::Color(5, 5, 5, 100));
         rounds_won_rect.setPosition(middle_up_corner);
-        center_rect_shape(rounds_won_rect);
+        center_rect_origin(rounds_won_rect);
 
         rounds_won_text.setScale(0.3, 0.3);
         MainMenu::setUpText(rounds_won_text, 60, middle_up_corner.x - 25, middle_up_corner.y - 25, sf::Color::White);
@@ -612,7 +589,7 @@ void Game::draw_in_game_pause_menu() {
 
     menu_rect_in_game.setFillColor(sf::Color(128, 128, 128, 120));
     menu_rect_in_game.setPosition(viewCenter);
-    center_rect_shape(menu_rect_in_game);
+    center_rect_origin(menu_rect_in_game);
 
     MainMenu::setUpText(text1_in_game, 36, viewCenter.x - 27, viewCenter.y - 40, sf::Color::White);
     MainMenu::setUpText(text2_in_game, 36, viewCenter.x - 25, viewCenter.y - 20, sf::Color::White);
@@ -632,13 +609,12 @@ void Game::draw_in_game_pause_menu() {
         text3_in_game.setFillColor(sf::Color::Yellow);
         if (Mouse::clicked()) {
             multiplayerAction = MultiplayerAction::STOP_SERVER_AND_CLIENT;
-            object::reset(client.object);
+            client.player_object = PlayerObject();
             client.disconnect();
             server.disconnect();
             gameState = GameState::MAIN_MENU;
             mainMenu.menuState = MenuState::MAIN_MENU;
             takeover.reset();
-            object::reset(client.object);
         }
     }
     window.draw(menu_rect_in_game);
@@ -670,7 +646,7 @@ void Game::draw_in_game_options_menu() {
     sf::RectangleShape menu_rect_in_game = sf::RectangleShape(sf::Vector2f(150, 200));
     menu_rect_in_game.setFillColor(sf::Color(128, 128, 128, 120));
     menu_rect_in_game.setPosition(viewCenter);
-    center_rect_shape(menu_rect_in_game);
+    center_rect_origin(menu_rect_in_game);
 
     MainMenu::setUpText(text1_in_game, 12 * 3, viewCenter.x - 50, viewCenter.y - 60, sf::Color::White);
     MainMenu::setUpText(text2_in_game, 12 * 3, viewCenter.x - 30, viewCenter.y - 40, sf::Color::White);
@@ -709,4 +685,45 @@ void Game::draw_in_game_options_menu() {
     window.draw(text3_in_game);
     window.draw(text4_in_game);
     window.draw(text5_in_game);
+}
+
+void Game::handle_camera_movement(sf::Vector2f player_position, sf::Vector2i mouse_position){
+
+
+    // Update the view gradually if the mouse is on the full top/bottom/left/right of the screen
+
+    if (gained_focus && gameState == GameState::IN_GAME) {
+
+        static bool camera_centered = true; // todo : remake
+        //check if player wants to center camera on self
+        if(KeyBoard::keyClicked(sf::Keyboard::Key::F2)){
+            if(camera_centered){
+                camera_centered = false;
+            } else {
+                camera_centered = true;
+            }
+        }
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space) || camera_centered) {
+            view.setCenter(player_position);
+            window.setView(view);
+        } else {
+
+
+            if (mouse_position.x <= 5) {
+                view.move(-3.0f * CAMERA_SMOOTHNESS, 0);
+                window.setView(view);
+            } else if (mouse_position.x >= (window.getSize().x - 5)) {
+                view.move(3.0f * CAMERA_SMOOTHNESS, 0);
+                window.setView(view);
+            } else if (mouse_position.y <= 5) {
+                view.move(0, -3.0f * CAMERA_SMOOTHNESS);
+                window.setView(view);
+            } else if (mouse_position.y >= (window.getSize().y - 5)) {
+                view.move(0, 3.0f * CAMERA_SMOOTHNESS);
+                window.setView(view);
+            }
+
+        }
+    }
 }

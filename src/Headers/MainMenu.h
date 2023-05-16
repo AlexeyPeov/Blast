@@ -1,12 +1,17 @@
-#include <SFML/Graphics.hpp>
-#include "InputText.h"
-#include "SpriteMethods.h"
+#ifndef MAIN_MENU_H
+#define MAIN_MENU_H
+
 #include <iostream>
+
+#include <SFML/Graphics.hpp>
+
+#include "Enums.h"
+#include "InputText.h"
+#include "Map.h"
 #include "Client.h"
+#include "Object.h"
 #include "Mouse.h"
 #include "KeyBoard.h"
-#include "Enums.h"
-#include "Map.h"
 
 struct MainMenu {
     float buttonWidth = 100;
@@ -51,7 +56,7 @@ struct MainMenu {
 
         ipInput.init(font, client.getServerIp());
         portInput.init(font, std::to_string(client.getServerPort()));
-        nicknameInput.init(font, "anonymous");
+        nicknameInput.init(font, "Anon");
 
         this->gameVideoMode = &gameVideoMode;
         this->client = &client;
@@ -83,3 +88,5 @@ struct MainMenu {
     void draw(sf::RenderWindow &window);
 
 };
+
+#endif

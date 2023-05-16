@@ -1,18 +1,22 @@
-#pragma once
+#ifndef MY_KEYBOARD_H
+#define MY_KEYBOARD_H
 
-#include "SFML/Graphics.hpp"
+#include <SFML/Graphics.hpp>
 
 namespace KeyBoard{
     static bool keyClicked(sf::Keyboard::Key key) {
-        static bool wasClicked = false;
-        if (sf::Keyboard::isKeyPressed(key)) {
-            if (!wasClicked) {
-                wasClicked = true;
-                return true;
-            }
-        } else {
-            wasClicked = false;
+        static std::map<sf::Keyboard::Key, bool> keyStates;
+        bool isPressed = sf::Keyboard::isKeyPressed(key);
+        if (isPressed && !keyStates[key]) {
+            keyStates[key] = true;
+            return false;
+        }
+        if (!isPressed && keyStates[key]) {
+            keyStates[key] = false;
+            return true;
         }
         return false;
     }
 }
+
+#endif

@@ -1,5 +1,4 @@
 #include "../Headers/Client.h"
-#include "../Headers/Map.h"
 
 
 //bool Client::connect(std::string address, uint16_t port) {
@@ -44,16 +43,20 @@ bool Client::connect(sf::IpAddress address, uint16_t port) {
     this->host_ip = address;
     this->host_port = port;
 
-    uint64_t identifier = generate_random_id();
-
-    this->id = identifier;
-    this->object.id = identifier;
+    this->player_object.id = id;
+    this->player_object.main_menu_event.host = host;
 #ifdef CLIENT_DEBUG_SEND
-    std::cout << "CL_ID: " << id << " OBJ_ID: " << object.id << "TICK:" << object.tick << "\n";
+    std::cout << "CL_ID: " << id << " OBJ_ID: " << player_object.id << "\n";
+
+    if(player_object.main_menu_event.host){
+        std::cout << "HOST: TRUE\n";
+    }
 #endif
     sf::Packet packet;
 
-    packet << MessageType::OBJECT << object.id << object;
+
+    packet << MessageType::CONNECT << id << player_object;
+
     if (socket.send(packet, host_ip, host_port) != sf::Socket::Done) {
 #ifdef CLIENT_DEBUG_SEND
         std::cerr << "Error connecting to server\n";
@@ -61,13 +64,15 @@ bool Client::connect(sf::IpAddress address, uint16_t port) {
         return false;
     }
     active = true;
+
     std::cout << "Client running..\n";
     return true;
 }
 
 void Client::disconnect() {
     sf::Packet packet;
-    packet << MessageType::DISCONNECT << id << object;
+    packet << MessageType::DISCONNECT << id << player_event;
+
     if (socket.send(packet, host_ip, host_port) != sf::Socket::Done) {
         // Error handling
 #ifdef CLIENT_DEBUG_SEND
@@ -76,14 +81,16 @@ void Client::disconnect() {
     } else {
 
 #ifdef CLIENT_DEBUG_SEND
-        std::cout << "DISCONNECTED: " << id << " OBJ_ID: " << object.id << "TICK:" << object.tick << "\n";
+        std::cout << "DISCONNECTED: " << id << " OBJ_ID: " << player_object.id << "\n";
 #endif
 
     }
     this->active = false;
     this->socket.unbind();
-    this->objects.clear();
-    reset(this->object);
+    this->player_objects.clear();
+    this->missile_objects.clear();
+    this->player_object = PlayerObject();
+    this->player_event = {0};
     std::cout << "Client stopped.\n";
 }
 
@@ -91,7 +98,11 @@ void Client::disconnect() {
 
 void Client::send_data() {
     sf::Packet packet;
-    packet << MessageType::OBJECT << id << object;
+    if(host){
+        packet << MessageType::PLAYER_EVENT_HOST << id << player_event << *(sf::Uint8*)&player_object.main_menu_event;
+    } else {
+        packet << MessageType::PLAYER_EVENT << id << player_event;
+    }
     if (socket.send(packet, host_ip, host_port) != sf::Socket::Done) {
         // Error handling
 #ifdef CLIENT_DEBUG_SEND
@@ -99,9 +110,9 @@ void Client::send_data() {
 #endif
     } else {
 
-#ifdef CLIENT_DEBUG_SEND
-        std::cout << "Client SEND DATA. TICK:" << object.tick << "\n";
-#endif
+//#ifdef CLIENT_DEBUG_SEND
+//        std::cout << "Client SEND DATA. TICK:" << player_object.tick << "\n";
+//#endif
 
     }
 
@@ -119,14 +130,16 @@ void Client::receive_data() {
         // Process received data
         uint64_t curr_tick;
         packet >> curr_tick;
-        size_t count;
-        packet >> count;
+        size_t player_objects_count; // todo: player_objects_count - players size, missile_objects_count - missiles size
+        size_t missile_objects_count;
+        packet >> player_objects_count;
+        packet >> missile_objects_count;
 
 #ifdef CLIENT_DEBUG_RECEIVE
-        if(curr_tick == object.tick + 1){
+        if(curr_tick == player_object.tick + 1){
             std::cout << "Received next tick\n";
         } else {
-            std::cout << "Received bad tick: " <<  curr_tick << " and obj.tick: " <<  object.tick << "\n";
+            std::cout << "Received bad tick: " <<  curr_tick << " and obj.tick: " <<  player_object.tick << "\n";
         }
 #endif
 
@@ -137,43 +150,56 @@ void Client::receive_data() {
         }
 
 
-        if(curr_tick != object.tick){
-            objects.clear();
+        if(curr_tick != tick){
+            player_objects.clear();
+            missile_objects.clear();
 #ifdef CLIENT_DEBUG_RECEIVE
-            std::cout << "COUNT:" << count << "\n";
-            std::cout << "RECEIVED as CL:" << curr_tick << " " << count << "h_ip:" << sender << "port:" << port << "\n";
+            std::cout << "COUNT:" << player_objects_count << "\n";
+            std::cout << "RECEIVED as CL: " << curr_tick << " players count" << player_objects_count << "\n";
 #endif
-
-            for (size_t i = 0; i < count; ++i) {
-                Object obj;
+            for (size_t i = 0; i < player_objects_count; i++) {
+                PlayerObject obj;
                 packet >> obj;
+                player_objects.push_back(obj);
 
-                if(obj.id != object.id){
-#ifdef CLIENT_DEBUG_RECEIVE
-                    std::cout << "RECEIVED OBJ: " << obj.id <<  "\n";
-#endif
-                    objects.push_back(obj);
-                } else {
-                    object.hp = obj.hp;
-                    object.tick = obj.tick;
+                std::cout << "CLIENT RECEIVE PLANT TIMER: " << obj.plant_or_defuse_timer << "\n";
+
+                if(obj.id == player_object.id){
+                    player_object = obj;
                 }
+
+#ifdef CLIENT_DEBUG_RECEIVE
+                std::cout << "RECEIVED PLAYER OBJ: " << obj.id << " main_menu_event: " << main_menu_event_to_string(obj) <<   "\n";
+#endif
             }
 
+            for (size_t i = 0; i < missile_objects_count; i++) {
+                MissileObject obj;
+                packet >> obj;
+                missile_objects.push_back(obj);
+#ifdef CLIENT_DEBUG_RECEIVE
+                std::cout << "RECEIVED missile OBJ: " << obj.id <<  "\n";
+#endif
+            }
         } else {
 #ifdef CLIENT_DEBUG_RECEIVE
-            std::cout << "RECEIVED WRONG TICK: " << curr_tick << " cl.obj.tick:" << object.tick << "\n";
+            std::cout << "RECEIVED WRONG TICK: " << curr_tick << " cl.obj.tick:" << player_object.tick << "\n";
 #endif
         }
     }
 
+    player_event = {0};
+
 }
 
-
-void Client::print_vector() {
-    std::cout << "\n\nRECEIVING DATA: \n";
-    for (auto &obj: this->objects) {
-        std::cout << "id: " << obj.id << " posx: " << obj.pos_x << " posy : " << obj.pos_y << " Action: "
-                  << obj.main_menu_action << "\n";
-    }
-    std::cout << "\n\n";
+std::string Client::main_menu_event_to_string(PlayerObject &object){
+    std::string menu_event = "\nmap1 : " + std::to_string(static_cast<uint32>(object.main_menu_event.map1))
+            + "\n map2 : " + std::to_string(static_cast<uint32>(object.main_menu_event.map2))
+            + "\n map3 : " + std::to_string(static_cast<uint32>(object.main_menu_event.map3))
+            + "\n death_match_game_mode : " + std::to_string(static_cast<uint32>(object.main_menu_event.death_match_game_mode))
+            + "\n takeover_game_mode : " + std::to_string(static_cast<uint32>(object.main_menu_event.takeover_game_mode))
+            + "\n host : " + std::to_string(static_cast<uint32>(object.main_menu_event.host))
+            + "\n ready to play : " + std::to_string(static_cast<uint32>(object.main_menu_event.ready_to_play))
+            + "\n in game : " + std::to_string(static_cast<uint32>(object.main_menu_event.in_game));
+    return menu_event;
 }

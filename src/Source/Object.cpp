@@ -1,350 +1,95 @@
 #include "../Headers/Object.h"
 
-namespace object{
-
-    // action
-// 0        1       2       3       4       5       6       7
-// |        |       |        |      |        |      |        |
-// shoot    map1   map2     map3    dm     tkovr   ready    host?
+std::string working_dir() {
+    return std::filesystem::current_path().string();
+}
 
 
-//  in_game_action
-//  shoot - 0
-//  wants_reload - 1
-//  reload_event - 2
-//  run/walk     - 3
-//  has/doesnt have bomb - 4
-//  drop bomb - 5
-//  plant bomb - 6
-//  defuse - 7
-//
-//
+namespace obj {
 
-    void choose_map_1(Object &object){
-        unchoose_maps(object);
-        object.main_menu_action |= (1 << 1);
-    }
-    void choose_map_2(Object &object){
-        unchoose_maps(object);
-        object.main_menu_action |= (1 << 2);
-    }
-    void choose_map_3(Object &object){
-        unchoose_maps(object);
-        object.main_menu_action |= (1 << 3);
+    void freeze(PlayerObject &object, sf::Vector2f position) {
+
     }
 
-    void choose_map(Object &object, short map){
-        if (map == 1){
-            choose_map_1(object);
-        } else if (map == 2){
-            choose_map_2(object);
-        } else if (map == 3){
-            choose_map_3(object);
+    void set_default_values(PlayerObject &object) {
+        object.hp = 100;
+        object.kills = 0;
+        object.deaths = 0;
+        object.sync = {0};
+        object.player_state = {0};
+    }
+
+
+    /*void reload(Player &player, PlayerObject &object) {
+
+        if (object.leftover_ammo > 0 && reloaded(object)) {
+            int how_much_to_insert = MAG_CAPACITY - object.mag_ammo;
+            if (how_much_to_insert > object.leftover_ammo) {
+                how_much_to_insert = object.leftover_ammo;
+            }
+            object.leftover_ammo -= how_much_to_insert;
+            object.mag_ammo += how_much_to_insert;
+            object.player_state.reloading = false;
+
+            player.leftover_ammo = object.leftover_ammo;
+            player.mag_ammo = object.mag_ammo;
+            player.reloading = false;
+
         }
-    }
+    }*/
 
-    void unchoose_maps(Object &object){
-        object.main_menu_action &= ~(1 << 1);
-        object.main_menu_action &= ~(1 << 2);
-        object.main_menu_action &= ~(1 << 3);
-    }
-
-    void choose_death_match(Object &object){
-        object.main_menu_action &= ~(1 << 5);
-        object.main_menu_action |= (1 << 4);
-    }
-
-    void choose_takeover(Object &object){
-        object.main_menu_action &= ~(1 << 4);
-        object.main_menu_action |= (1 << 5);
-    }
-    void choose_game_mode(Object &object, short gamemode){
-        if (gamemode == 1){
-            choose_death_match(object);
-        } else if (gamemode == 2){
-            choose_takeover(object);
-        }
-    }
-    void ready(Object &object){
-        if (is_ready(object)){
-            object.main_menu_action &= ~(1 << 6);
-        } else {
-            object.main_menu_action |= (1 << 6);
-        }
-    }
-
-    bool is_ready(Object &object){
-        return (object.main_menu_action & (1 << 6)) != 0;
-    }
-
-    void set_host(Object &object){
-        object.main_menu_action |= (1 << 7);
-    }
-    void set_not_host(Object &object){
-        object.main_menu_action &= ~(1 << 7);
-    }
-
-    short which_map_is_chosen(Object &object){
-        if((object.main_menu_action & (1 << 1)) != 0){
-            //1
-            return 1;
-        } else if((object.main_menu_action & (1 << 2)) != 0){
-            //2
-            return 2;
-        } else if((object.main_menu_action & (1 << 3)) != 0){
-            //3
-            return 3;
-        }
-        return 0;
-    }
-
-    short which_game_mode_is_chosen(Object &object){
-        if((object.main_menu_action & (1 << 4)) != 0){
-            //dm
-            return 1;
-        } else if((object.main_menu_action & (1 << 5)) != 0){
-            //takeover
-            return 2;
-        }
-        return 0;
-    }
-
-    bool is_host(Object &object){
-        return (object.main_menu_action & (1 << 7)) != 0;
-    }
-    void shoot(Object &object){
-        object.in_game_action |= (1 << 0);
-    }
-
-    void dont_shoot(Object &object){
-        object.in_game_action &= ~(1 << 0);
-    }
-
-    bool is_shooting(Object &object){
-        if((object.in_game_action & (1 << 0)) != 0){
-            dont_shoot(object);
-            return true;
-        }
-        return false;
-    }
-
-    void wants_or_needs_to_reload(Object &object){
-        object.in_game_action |= (1 << 1);
-    }
-
-    void doesnt_want_or_need_to_reload(Object &object){
-        object.in_game_action &= ~(1 << 1);
-    }
-
-    bool does_want_or_need_to_reload(Object &object){
-        return (object.in_game_action & (1 << 1)) != 0;
-    }
-
-    void reload_start(Object &object){
-        object.in_game_action |= (1 << 3);
-    }
-
-    void reload_end(Object &object){
-        object.in_game_action &= ~(1 << 3);
-    }
-
-    bool is_reloading(Object &object){
-        return (object.in_game_action & (1 << 3)) != 0;
-    }
-
-    void run(Object &object){
-        object.in_game_action |= (1 << 2);
-    }
-
-    void walk(Object &object){
-        object.in_game_action &= ~(1 << 2);
-    }
-
-    bool is_running(Object &object){
-        if((object.in_game_action & (1 << 2)) != 0){
-            walk(object);
+    bool can_shoot(PlayerObject &object) {
+        if (object.shoot_timer > SHOOT_DELAY && object.mag_ammo > 0 && !object.player_state.reloading) {
+            object.player_state.shooting = true;
             return true;
         }
         return false;
     }
 
 
-    void has_bomb(Object &object){
-        object.in_game_action |= (1 << 4);
-    }
-
-    void doesnt_have_bomb(Object &object){
-        object.in_game_action &= ~(1 << 4);
-    }
-
-    bool is_bomb_carrier(Object &object){
-        return (object.in_game_action & (1 << 4)) != 0;
-    }
-
-    void drop_bomb(Object &object){
-     //   if(is_bomb_carrier(object)){
-            object.in_game_action |= (1 << 5);
-            doesnt_have_bomb(object);
-     //   }
-    }
-
-    void dont_drop_bomb(Object &object){
-    //    if(is_bomb_carrier(object)){
-            object.in_game_action &= ~(1 << 5);
-     //   }
-    }
-
-    bool drops_bomb(Object &object){
-       // if(is_bomb_carrier(object)){
-            if ((object.in_game_action & (1 << 5)) != 0){
-                return true;
-            }
-     //   }
+    bool reloaded(PlayerObject &object) {
+        if (object.reload_timer >= RELOAD_TIME) {
+            object.reload_timer = 0;
+            return true;
+        }
         return false;
     }
 
-    void plant_bomb(Object &object){
-        object.in_game_action |= (1 << 6);
-    }
-    void not_plant_bomb(Object &object){
-        object.in_game_action &= ~(1 << 6);
-    }
 
-    bool is_bomb_planted(Object &object) {
-        return (object.in_game_action & (1 << 6)) != 0;
-    }
-
-    void defused(Object &object){
-        object.in_game_action |= (1 << 7);
-    }
-    void not_defused(Object &object){
-        object.in_game_action &= ~(1 << 7);
-    }
-
-    bool is_bomb_defused(Object &object) {
-        return (object.in_game_action & (1 << 7)) != 0;
-    }
-
-    void synchronize_with_host(Object &host, Object &not_host){
-        if(!is_host(not_host) && is_host(host)){
-            not_host.sync = host.sync;
+    double missile_rotation_based_on_movement(PlayerObject &object, double &rotation) {
+        std::uniform_real_distribution<double> distribution(-135.f / 2, 135.f / 2);
+        if (object.player_state.running) {
+            rotation += distribution(generator);
+        } else if (object.player_state.walking) {
+            distribution.param(std::uniform_real_distribution<double>::param_type(-25.f / 2, 25.f / 2));
+            rotation += distribution(generator);
         }
+        return rotation;
     }
 
-    void synchronize_host(
-            Object &host,
-            uint8_t current_round,
-            uint8_t team_t_score,
-            uint8_t team_ct_score,
-            bool is_before_round,
-            bool is_in_round,
-            bool is_retake,
-            bool is_after_round,
-            uint8_t seconds
-    ){
-        if(is_host(host)){
-            host.sync = 0;
-
-
-//            host.sync |= (current_round & 0b11111) << 0;
-//            host.sync |= (team_t_score & 0b1111) << 5;
-//            host.sync |= (team_ct_score & 0b1111) << 9;
-//
-//            host.sync |= (is_before_round & 0b1) << 13;
-//            host.sync |= (is_in_round & 0b1) << 14;
-//            host.sync |= (is_retake & 0b1) << 15;
-//            host.sync |= (is_after_round & 0b1) << 16;
-//            host.sync |= (seconds & 0b11111111) << 17;
-
-
-            host.sync |= (current_round & 0b11111) << 0;
-            host.sync |= (team_t_score & 0b11111) << 5;
-            host.sync |= (team_ct_score & 0b11111) << 10;
-
-            host.sync |= (is_before_round & 0b1) << 15;
-            host.sync |= (is_in_round & 0b1) << 16;
-            host.sync |= (is_retake & 0b1) << 17;
-            host.sync |= (is_after_round & 0b1) << 18;
-            host.sync |= (seconds & 0b11111111) << 19;
-        }
+    short which_map_is_chosen(PlayerObject &player_object){
+        if(player_object.main_menu_event.map1) {std::cout << "MAP1\n"; return 1; }
+        if(player_object.main_menu_event.map2) {std::cout << "MAP2\n"; return 2; }
+        if(player_object.main_menu_event.map3) {std::cout << "MAP3\n"; return 3; }
+        return 0;
     }
 
-    void extract_sync_values(
-            const Object &object,
-            uint8_t &current_round,
-            uint8_t &team_t_score,
-            uint8_t &team_ct_score,
-            bool &is_before_round,
-            bool &is_in_round,
-            bool &is_retake,
-            bool &is_after_round,
-            uint8_t &seconds
-    ) {
-        current_round = (object.sync >> 0) & 0b11111;
-        team_t_score = (object.sync >> 5) & 0b11111;
-        team_ct_score = (object.sync >> 10) & 0b11111;
-        is_before_round = (object.sync >> 15) & 0b1;
-        is_in_round = (object.sync >> 16) & 0b1;
-        is_retake = (object.sync >> 17) & 0b1;
-        is_after_round = (object.sync >> 18) & 0b1;
-        seconds = (object.sync >> 19) & 0b11111111;
+    short which_game_mode_is_chosen(PlayerObject &player_object){
+        if(player_object.main_menu_event.death_match_game_mode) {std::cout << "DEATHMATCH GAME MODE\n"; return 1; }
+        if(player_object.main_menu_event.takeover_game_mode) {std::cout << "TAKEOVER GAME MODE\n"; return 2; }
+        return 0;
     }
 
-    uint8_t extract_seconds_left(const Object &object) {
-        return (object.sync >> 19) & 0b11111111;
-    }
-
-    Object find_host(std::vector<Object> objects){
-        for(auto& object : objects){
-            if (is_host(object)){
-                return object;
-            }
-        }
-        Object obj;
-        return obj;
-    }
-
-    std::vector<char> serialize_object(const Object& object) {
-        std::vector<char> data;
-        data.resize(sizeof(Object));
-        memcpy(data.data(), &object, sizeof(Object));
-        return data;
-    }
-
-    std::vector<char> serialize_objects(const std::vector<Object>& objects) {
-        std::vector<char> data;
-        data.resize(objects.size() * sizeof(Object));
-        memcpy(data.data(), objects.data(), data.size());
-        return data;
-    }
-
-    void deserialize_objects(const std::vector<char>& data, std::vector<Object>& objects) {
-        if (data.size() % sizeof(Object) != 0) {
-            std::cerr << "data size is not a multiple of Object size, not doing anything..\n";
-            return;
-        }
-        size_t object_count = data.size() / sizeof(Object);
-        objects.resize(object_count);
-        memcpy(objects.data(), data.data(), data.size());
-    }
-
-    void deserialize_object(const std::vector<char>& data, Object & object) {
-        if (data.size() < sizeof(Object)) {
-            std::cerr << "Error: not enough data to deserialize Object\n";
-            return;
-        }
-        memcpy(&object, data.data(), sizeof(Object));
-    }
-    void copy_string_to_nickname(std::string &string, Object &object){
+    void copy_string_to_nickname(std::string &string, PlayerObject &object){
         if(string.empty()) {
             std::strcpy(object.nickname, "anonymous");
             return;
         }
 
-        int size = string.size();
-        int max_char_pos = nickname_length - 1;
+        size_t size = string.size();
+        int max_char_pos = NICKNAME_LENGTH - 1;
 
-        for(int i = 0; i < nickname_length; i++){
+        for(int i = 0; i < NICKNAME_LENGTH; i++){
             object.nickname[i] = '\0';
         }
 
@@ -356,28 +101,184 @@ namespace object{
             object.nickname[size + 1] = '\0';
         }
     }
-    void reset(Object &object){
-        object = Object();
+
+    /*void plant_bomb(PlayerObject &object, Player &player, sf::Sprite &plant_area, std::pair<bool, sf::Sprite> &bomb) {
+        if (object.team == TEAM_T && object.player_state.has_bomb && !object.player_state.planted_bomb) {
+
+            if (
+                    sprite_collision(player.sprite, plant_area, false, false) &&
+                    !object.player_state.walking &&
+                    !object.player_state.running &&
+                    !object.player_state.reloading &&
+                    !object.player_state.shooting &&
+                    !object.player_state.planted_bomb &&
+                    object.hp > 0
+                    ) {
+                object.plant_or_defuse_timer++;
+                player.plant_or_defuse_timer++;
+
+                if (object.plant_or_defuse_timer >= PLANT_TIME) {
+                    object.player_state.planted_bomb = true;
+                    object.player_state.has_bomb = false;
+                    player.planted_bomb = true;
+                    player.has_bomb = false;
+                    bomb.second.setPosition(player.sprite.getPosition());
+                    bomb.first = BOMB_DROPPED;
+                }
+            } else {
+                object.plant_or_defuse_timer = 0;
+                player.plant_or_defuse_timer = 0;
+            }
+        }
     }
 
-    sf::Packet& operator<<(sf::Packet& packet, const Object& object) {
-        return packet << object.id << object.nickname << object.hp << object.in_game_action
-                      << object.team << object.kills << object.deaths << object.pos_x
-                      << object.pos_y << object.rotation << object.missile_rotation
-                      << object.main_menu_action << object.tick << object.sync;
+    void defuse_bomb(PlayerObject &object, Player &player, std::pair<bool, sf::Sprite> &bomb) {
+        if (object.team == TEAM_CT) {
+
+            if (
+                    sprite_collision(player.sprite, bomb.second, false, false) &&
+                    !object.player_state.walking &&
+                    !object.player_state.running &&
+                    !object.player_state.reloading &&
+                    !object.player_state.shooting &&
+                    !object.player_state.defused_bomb &&
+                    object.hp > 0
+                    ) {
+                object.plant_or_defuse_timer++;
+                player.plant_or_defuse_timer++;
+                if (object.plant_or_defuse_timer >= DEFUSE_TIME) {
+                    object.player_state.defused_bomb = true;
+                    player.defused_bomb = true;
+                }
+            } else {
+                object.plant_or_defuse_timer = 0;
+                player.plant_or_defuse_timer = 0;
+            }
+        }
     }
 
-    sf::Packet& operator>>(sf::Packet& packet, Object& object) {
-        return packet >> object.id >> object.nickname >> object.hp >> object.in_game_action
-                      >> object.team >> object.kills >> object.deaths >> object.pos_x
-                      >> object.pos_y >> object.rotation >> object.missile_rotation
-                      >> object.main_menu_action >> object.tick >> object.sync;
+    void drop_bomb(Player &player, PlayerObject &object, std::pair<bool, sf::Sprite> &bomb, Map &map) {
+        player.has_bomb = false;
+        object.player_state.has_bomb = false;
+
+        bomb.first = BOMB_DROPPED;
+        object.player_state.dropped_bomb = true;
+
+
+        bomb.second.setPosition(map.calculate_3x3_non_wall_position(player.sprite.getPosition(),
+                                                                    player.sprite.getRotation() - 90));
     }
 
-    uint64_t generate_random_id() {
+    void move(Player &player, PlayerObject &object, PlayerEvent &player_event) {
+
+        bool W = player_event.up_button_pressed;
+        bool S = player_event.down_button_pressed;
+        bool A = player_event.left_button_pressed;
+        bool D = player_event.right_button_pressed;
+
+        float movement_speed = 0;
+        if (player_event.walk_silently_button_pressed && (W || S || A || D)) {
+            movement_speed = WALKING_MOVEMENT_SPEED;
+
+            object.player_state.walking = true;
+            object.player_state.running = false;
+
+            player.walking = true;
+            player.running = false;
+        } else if (W || S || A || D) {
+            movement_speed = RUNNING_MOVEMENT_SPEED;
+            object.player_state.running = true;
+            object.player_state.walking = false;
+
+            player.running = true;
+            player.walking = false;
+        } else {
+            object.player_state.running = false;
+            object.player_state.walking = false;
+
+            player.running = false;
+            player.walking = false;
+        }
+
+        sf::Vector2f movement = {0, 0};
+        if (W) {
+            movement.y -= 1;
+        }
+        if (S) {
+            movement.y += 1;
+        }
+        if (A) {
+            movement.x -= 1;
+        }
+        if (D) {
+            movement.x += 1;
+        }
+
+        // Normalize movement vector
+        float length = sqrt(movement.x * movement.x + movement.y * movement.y);
+        if (length > 0) {
+            movement /= length;
+            object.pos_x += movement.x * movement_speed;
+            object.pos_y += movement.y * movement_speed;
+        }
+
+        player.sprite.setPosition(object.pos_x, object.pos_y);
+
+    }*/
+
+    sf::Packet &operator<<(sf::Packet &packet, const PlayerEvent &player_event) {
+        return packet
+                << *(sf::Uint32 *) &player_event;
+    }
+
+    sf::Packet &operator>>(sf::Packet &packet, PlayerEvent &player_event) {
+        return packet
+                >> *(sf::Uint32 *) &player_event;
+    }
+
+
+
+    sf::Packet &operator<<(sf::Packet &packet, const PlayerObject &object) {
+        return packet << object.id << object.nickname << object.hp << object.team
+                      << object.kills << object.deaths
+                      << object.mag_ammo << object.leftover_ammo
+                      << object.pos_x << object.pos_y << object.rotation << object.tick
+                      << *(uint16*)&object.player_state << *(uint8*)&object.main_menu_event << *(uint64*)&object.sync
+                      << object.shoot_timer << object.plant_or_defuse_timer << object.reload_timer;
+    }
+
+    sf::Packet &operator>>(sf::Packet &packet, PlayerObject &object) {
+        return packet >> object.id >> object.nickname >> object.hp >> object.team
+                      >> object.kills >> object.deaths
+                      >> object.mag_ammo >> object.leftover_ammo
+                      >> object.pos_x >> object.pos_y >> object.rotation >> object.tick
+                      >> *(uint16*)&object.player_state >> *(uint8*)&object.main_menu_event >> *(uint64*)&object.sync
+                      >> object.shoot_timer >> object.plant_or_defuse_timer >> object.reload_timer;
+    }
+
+    sf::Packet &operator<<(sf::Packet &packet, const MissileObject &object) {
+        return packet << object.id << object.life << object.player_who_shot_id << object.rotation_degree
+                      << object.position_x << object.position_y << object.previous_position_x
+                      << object.previous_position_y;
+    }
+
+    sf::Packet &operator>>(sf::Packet &packet, MissileObject &object) {
+        return packet
+        >> object.id
+        >> object.life
+        >> object.player_who_shot_id
+        >> object.rotation_degree
+        >> object.position_x
+        >> object.position_y
+        >> object.previous_position_x
+        >> object.previous_position_y;
+    }
+
+    uint64 generate_random_id() {
         static std::mt19937 generator(std::random_device{}());
-        std::uniform_int_distribution<uint64_t> distribution;
+        std::uniform_int_distribution<uint64> distribution;
         return distribution(generator);
     }
 
 }
+

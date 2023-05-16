@@ -1,6 +1,10 @@
-#pragma once
+#ifndef INPUT_TEXT_H
+#define INPUT_TEXT_H
+
 #include "SFML/Graphics.hpp"
 #include <iostream>
+
+
 struct InputText {
 
     sf::RectangleShape box;
@@ -30,3 +34,5 @@ struct InputText {
 
     uint16_t toUint16() const;
 };
+
+#endif

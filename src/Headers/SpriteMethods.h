@@ -7,12 +7,14 @@
 
 #include <SFML/Graphics.hpp>
 
-void config_sprite(sf::Sprite &sprite);
+void center_sprite_origin(sf::Sprite &sprite);
 
-void center_rect_shape(sf::RectangleShape &shape);
+void center_rect_origin(sf::RectangleShape &shape);
 
-void center_circle_shape(sf::CircleShape &shape);
+void center_circle_origin(sf::CircleShape &shape);
 
-bool collision(sf::Sprite& a, sf::Sprite& b, bool a_can_move = true, bool b_can_move = true);
+bool sprite_collision(sf::Sprite& a, sf::Sprite& b, bool a_can_move = true, bool b_can_move = true);
+
+bool rectangle_collision(sf::RectangleShape& a, sf::RectangleShape& b, bool a_can_move = true, bool b_can_move = true);
 
 #endif

@@ -105,7 +105,7 @@ add_definitions(-DSFML_STATIC)
 # Find the SFML package and specify the components to use
 find_package(SFML 2.5 COMPONENTS graphics window system REQUIRED)
 
-add_executable(BLAST WIN32
+add_executable(BLAST #WIN32
         src/main.cpp
 
         src/Source/Entity.cpp
@@ -124,7 +124,7 @@ add_executable(BLAST WIN32
         src/Source/RayCaster.cpp
         src/Headers/Takeover.h
         src/Source/PathFinder.cpp
-        )
+        src/Headers/Constants.h)
 
 if(WIN32)
     add_custom_command(TARGET BLAST POST_BUILD

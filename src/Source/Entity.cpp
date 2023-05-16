@@ -1,35 +1,26 @@
 //
 // Created by alexey on 4/12/23.
 //
-
-#include <valarray>
 #include "../Headers/Entity.h"
 
-bool Entity::move(sf::Vector2f &mouse_position) {
+bool Entity::move(bool W, bool S, bool A, bool D) {
     bool moving = false;
-    //if(sf::Mouse::isButtonPressed(sf::Mouse::Right)){
-        float angle =
-                (atan2(mouse_position.y - this->sprite.getPosition().y,
-                       mouse_position.x - this->sprite.getPosition().x
-                ) * 180 / M_PI) + 90;
-        this->sprite.setRotation(angle);
 
-  //  }
     // Move sprite based on keyboard input
     sf::Vector2f movement = {0,0};
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
+    if (W) {
         movement.y -= 1;
         moving = true;
     }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
+    if (S) {
         movement.y += 1;
         moving = true;
     }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
+    if (A) {
         movement.x -= 1;
         moving = true;
     }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
+    if (D) {
         movement.x += 1;
         moving = true;
     }

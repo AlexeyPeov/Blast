@@ -1,5 +1,9 @@
-#pragma once
-#include "SFML//Graphics.hpp"
+
+#ifndef MY_MOUSE_H
+#define MY_MOUSE_H
+
+
+#include <SFML/Graphics.hpp>
 
 namespace Mouse{
     static bool cursorCollidesWithItem(sf::Vector2f &mousePos, sf::FloatRect menuItemBounds) {
@@ -24,3 +28,5 @@ namespace Mouse{
         return false;
     }
 }
+
+#endif

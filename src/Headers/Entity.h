@@ -2,7 +2,10 @@
 // Created by alexey on 4/12/23.
 //
 
-#pragma once
+#ifndef GAME_ENTITY_H
+#define GAME_ENTITY_H
+
+#include <valarray>
 
 #include <SFML/Graphics.hpp>
 
@@ -11,7 +14,9 @@ struct Entity {
     float movement_speed;
     float rotation_degree;
 
-    bool move(sf::Vector2f &mouse_position);
 
+    bool move(bool W, bool S, bool A, bool D);
 };
+
+#endif
 

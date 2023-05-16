@@ -1,8 +1,12 @@
-#pragma once
+#ifndef MY_RAYCASTER_H
+#define MY_RAYCASTER_H
+
+#include <cmath>
 
 #include <SFML/Graphics.hpp>
-#include <cmath>
+
 #include "Map.h"
+#include "PathFinder.h"
 
 
 namespace RayCaster {
@@ -18,3 +22,5 @@ namespace RayCaster {
                   std::unordered_map<sf::Vector2f, Wall, Vector2fHash> &walls, float player_angle);
 
 }
+
+#endif
