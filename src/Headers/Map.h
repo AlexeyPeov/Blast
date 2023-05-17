@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <valarray>
 #include <unordered_set>
+#include <unordered_map>
 
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
