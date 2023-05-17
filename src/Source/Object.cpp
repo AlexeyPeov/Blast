@@ -274,6 +274,18 @@ namespace obj {
         >> object.previous_position_y;
     }
 
+
+    sf::Packet& operator << (sf::Packet& packet, const BombObject &object){
+        return packet
+                << *(uint32*) &object;
+    }
+
+    sf::Packet& operator >> (sf::Packet& packet, BombObject& object){
+        return packet
+                >> *(uint32*) &object;
+    }
+
+
     uint64 generate_random_id() {
         static std::mt19937 generator(std::random_device{}());
         std::uniform_int_distribution<uint64> distribution;

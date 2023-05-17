@@ -15,18 +15,20 @@ namespace Mouse{
         );
     }
 
-    static bool clicked() {
-        static bool wasPressed = false;
-        if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
-            if (!wasPressed) {
-                wasPressed = true;
-                return true;
-            }
-        } else {
-            wasPressed = false;
+    static bool clicked(sf::Mouse::Button button = sf::Mouse::Button::Left) {
+        static std::map<sf::Mouse::Button, bool> buttonStates;
+        bool isPressed = sf::Mouse::isButtonPressed(button);
+        if (isPressed && !buttonStates[button]) {
+            buttonStates[button] = true;
+            return false;
+        }
+        if (!isPressed && buttonStates[button]) {
+            buttonStates[button] = false;
+            return true;
         }
         return false;
     }
+
 }
 
 #endif

@@ -69,7 +69,11 @@ void Map::init_map_sounds() {
         std::cerr << "failed to load reload sound\n";
     }
 
-    if (!single_shot_buffer.loadFromFile(working_dir() + "/sounds/shot_mono.wav")) {
+    if (!missile_explosion_buffer.loadFromFile(working_dir() + "/sounds/explosion.wav")) {
+        std::cerr << "failed to load reload sound\n";
+    }
+
+    if (!single_shot_buffer.loadFromFile(working_dir() + "/sounds/new_shot_mono.wav")) {
         std::cerr << "failed to load shot sound\n";
     }
 
@@ -110,6 +114,8 @@ void Map::init_map_sounds() {
 
     t_win_sound.setBuffer(t_win_buffer);
     ct_win_sound.setBuffer(ct_win_buffer);
+    missile_explosion_sound.setBuffer(missile_explosion_buffer);
+
 
     bomb_planted_sound.setVolume(20);
     bomb_defused_sound.setVolume(20);
@@ -122,8 +128,11 @@ void Map::init_map_sounds() {
     bomb_tick_sound.setAttenuation(1.f);
 
     bomb_explosion_sound.setVolume(60);
-    bomb_explosion_sound.setMinDistance(15.f);
-    bomb_explosion_sound.setAttenuation(1.f);
+    bomb_explosion_sound.setMinDistance(350.f);
+    bomb_explosion_sound.setAttenuation(2.f);
+
+    missile_explosion_sound.setMinDistance(100.f);
+    missile_explosion_sound.setAttenuation(10.f);
 
 }
 
@@ -209,51 +218,16 @@ void Map::init_walls(short level) {
 
 }
 
-/*void Map::init_main_player(short team) {
-    float movement_speed = WALKING_MOVEMENT_SPEED;
-    float rotation_degree = 0;
-    int hp = 100;
-    sf::Sprite player_spr;
-    if (team == 1) {
-        main_player = Player(team1_player_sprite, movement_speed, rotation_degree, hp, 0);
-    } else {
-        main_player = Player(team2_player_sprite, movement_speed, rotation_degree, hp, 0);
-    }
-    center_sprite_origin(main_player.sprite);
-    main_player.sprite.setPosition(random_non_wall_position());
 
-    main_player.single_shot_sound.setBuffer(single_shot_buffer);
-    main_player.running_sound.setBuffer(running_buffer);
-    main_player.reload_sound.setBuffer(gun_reload_buffer);
-
-
-    main_player.reload_sound.setVolume(60.f);
-
-    main_player.running_sound.setLoop(true);
-    main_player.running_sound.setMinDistance(15.f);
-    main_player.running_sound.setAttenuation(1.f);
-
-
-    main_player.reload_sound.setMinDistance(5.f);
-    main_player.reload_sound.setAttenuation(2.f);
-
-    main_player.single_shot_sound.setMinDistance(1.f);
-    main_player.single_shot_sound.setAttenuation(20.f);
-
-
-//    main_player.reload_sound.setVolume(0);
-//    main_player.single_shot_sound.setVolume(0);
-}*/
-
-Player Map::init_new_player(uint64_t id, float pos_x, float pos_y, uint8 team) const {
+Player Map::init_new_player(uint64_t id, float pos_x, float pos_y, uint8 team) {
     float movement_speed = WALKING_MOVEMENT_SPEED;
     float rotation_degree = 0;
     int hp = 100;
     Player player;
     if (team == TEAM_T) {
-        player = Player(team1_player_sprite, movement_speed, rotation_degree, hp, id, team);
+        player = Player(team1_player_sprite, movement_speed, rotation_degree, hp, id, team, plant_animation, defuse_animation);
     } else if (team == TEAM_CT) {
-        player = Player(team2_player_sprite, movement_speed, rotation_degree, hp, id, team);
+        player = Player(team2_player_sprite, movement_speed, rotation_degree, hp, id, team, plant_animation, defuse_animation);
     } else {
         std::cerr << "NO TEAM NO GAME, FUCK OFF\n";
         exit(-1);
@@ -266,11 +240,8 @@ Player Map::init_new_player(uint64_t id, float pos_x, float pos_y, uint8 team) c
     player.reload_sound.setBuffer(gun_reload_buffer);
 
 
-    player.reload_sound.setVolume(60.f);
-
-    player.running_sound.setLoop(true);
-    player.running_sound.setMinDistance(55.f);
-    player.running_sound.setAttenuation(20.f);
+    player.running_sound.setMinDistance(170.f);
+    player.running_sound.setAttenuation(12.f);
 
 
     player.reload_sound.setMinDistance(45.f);
@@ -280,21 +251,27 @@ Player Map::init_new_player(uint64_t id, float pos_x, float pos_y, uint8 team) c
     player.single_shot_sound.setAttenuation(15.f);
 
 
+    player.reload_sound.setVolume(60.f);
+
+    player.running_sound.setLoop(true);
+
     return player;
 }
 
 
 void Map::init_missile(Player &player) {
     static uint64 missile_id = 0;
-    player.single_shot_sound.setPosition(player.sprite.getPosition().x, player.sprite.getPosition().y, 0.f);
-
-    player.single_shot_sound.play();
     float rotation_degree = player.missile_rotation_based_on_movement();
 
     missile_sprite.setRotation(rotation_degree);
     float xToRad = rotation_degree * M_PI / 180;
     float dx = 10 * sin(xToRad);
     float dy = 10 * cos(xToRad);
+
+    //player.single_shot_sound.setPosition(player.sprite.getPosition().x, player.sprite.getPosition().y, 1.f);
+
+    //std::cout << player.sprite.getPosition().x << " " <<  player.sprite.getPosition().y << "\n";
+    //std::cout << player.single_shot_sound.getPosition().x << " " <<  player.single_shot_sound.getPosition().y << "\n";
 
     center_sprite_origin(missile_sprite);
     missile_sprite.setPosition(player.sprite.getPosition().x + dx, player.sprite.getPosition().y - dy);
@@ -313,6 +290,8 @@ void Map::init_explosion(Missile &missile) {
     Animation explosion = Animation(explosion_sprite, 680 / 17, 40, 17, 2);
     explosion.sprite.setPosition(missile.sprite.getPosition());
     explosions.push_back(explosion);
+    missile_explosion_sound.setPosition(missile.sprite.getPosition().x, missile.sprite.getPosition().y, 0.0f);
+    missile_explosion_sound.play();
 }
 
 
@@ -362,7 +341,6 @@ void Map::update_and_draw_missiles(sf::RenderWindow &window) {
 
         } else {
             init_explosion(*missile);
-            std::cout << "ERASED MISSILE - CL\n";
             missile = missiles.erase(missile);
         }
     }
@@ -409,71 +387,6 @@ void Map::update_and_draw_explosions(sf::RenderWindow &window) {
     }
 }
 
-/*void Map::update_bots() {
-
-    for (auto &[id, player]: players) {
-        if (player.hp > 0) {
-            if (player.shooting) {
-                //std::cout << "OTHER PLAYER SHOOTIN\n";
-                init_missile(player);
-                player.mag_ammo--;
-            }
-            if (player.if_wants_or_needs_to_reload()) {
-                player.reload_sound.setPosition(player.sprite.getPosition().x, player.sprite.getPosition().y, 0);
-                player.reload_sound.play();
-            }
-
-            if (player.planted_bomb) {
-                bomb.first = true;
-                bomb.second.setPosition(player.sprite.getPosition());
-                bomb_planted = true;
-                bomb_tick_sound.setPosition(bomb.second.getPosition().x, bomb.second.getPosition().y, 0.f);
-                bomb_explosion_sound.setPosition(bomb.second.getPosition().x, bomb.second.getPosition().y, 0.f);
-            }
-
-            if (player.defused_bomb) {
-                bomb_defused = true;
-                main_player.defused_bomb = true;
-            }
-
-            if (player.reloading) {
-                player.reload_sound.setPosition(player.sprite.getPosition().x, player.sprite.getPosition().y, 0);
-            }
-
-            if (player.wants_to_drop_bomb()) {
-                bomb.first = true;
-                bomb.second.setPosition(
-                        calculate_3x3_non_wall_position({player.sprite.getPosition().x, player.sprite.getPosition().y},
-                                                        player.sprite.getRotation() - 90));
-            }
-
-            if (player.running) {
-                player.running_sound.setVolume(60);
-                player.running_sound.setPosition(player.sprite.getPosition().x, player.sprite.getPosition().y, 0.f);
-            } else {
-                player.running_sound.setVolume(0);
-                player.running_sound.play();
-            }
-            // todo : AI
-//            players[object.id].team_t = (object.team == 1);
-//            players[object.id].has_bomb = object::is_bomb_carrier(object);
-//            players[object.id].sprite.setRotation(object.rotation);
-//            players[object.id].sprite.setPosition(object.pos_x, object.pos_y);
-        } else {
-            if (player.has_bomb) {
-                player.wants_to_drop_bomb();
-                bomb.first = true;
-                bomb.second.setPosition(
-                        calculate_3x3_non_wall_position({player.sprite.getPosition().x, player.sprite.getPosition().y},
-                                                        player.sprite.getRotation() - 90));
-            }
-        }
-
-//        players[object.id].hp = object.hp;
-
-    }
-}*/
-
 sf::Vector2f Map::calculate_3x3_non_wall_position(const sf::Vector2f &position, const float rotation) const {
 
     // rotaton is sprite.getRotation()
@@ -517,90 +430,29 @@ sf::Vector2f Map::calculate_3x3_non_wall_position(const sf::Vector2f &position, 
 
 }
 
-/*void Map::update_main_player() {
-    main_player.handle_movement();
-    if (main_player.hp > 0) {
-        sf::Listener::setPosition(main_player.sprite.getPosition().x, main_player.sprite.getPosition().y, 0.f);
-        if (main_player.shooting) {
-            init_missile(main_player);
-        }
-        main_player.plant_bomb(a_site_sprite, bomb.second, main_player.shooting, plant_animation);
-        main_player.defuse_bomb(bomb.second, main_player.shooting, defuse_animation);
-
-        if (main_player.planted_bomb && main_player.has_bomb) {
-            main_player.has_bomb = false;
-            bomb.first = true;
-            std::cout << "PLANTED MAIN PLAYER\n";
-            this->bomb_planted = true;
-            bomb_tick_sound.setPosition(bomb.second.getPosition().x, bomb.second.getPosition().y, 0.f);
-            bomb_explosion_sound.setPosition(bomb.second.getPosition().x, bomb.second.getPosition().y, 0.f);
-        }
-
-        if (main_player.defused_bomb && !bomb_defused) {
-            puts("MAIN PLAYER DEFUSED\n");
-            bomb_defused = true;
-        }
-
-        if (main_player.wants_to_drop_bomb()) {
-            main_player.has_bomb = false;
-            bomb.first = true;
-            bomb.second.setPosition(calculate_3x3_non_wall_position(main_player.sprite.getPosition(),
-                                                                    main_player.sprite.getRotation() - 90));
-        }
-        main_player.shoot_timer += 1;
-        if (main_player.if_wants_or_needs_to_reload()) {
-            main_player.reload_sound.setPosition(main_player.sprite.getPosition().x, main_player.sprite.getPosition().y,
-                                                 0.f);
-            main_player.reload_sound.play();
-        }
-        if (main_player.reloading) {
-            main_player.reload_sound.setPosition(main_player.sprite.getPosition().x, main_player.sprite.getPosition().y,
-                                                 0.f);
-            main_player.reload_timer++;
-            main_player.reload();
-        }
-        main_player.single_shot_sound.setPosition(main_player.sprite.getPosition().x,
-                                                  main_player.sprite.getPosition().y, 0);
-    } else {
-        if (main_player.has_bomb) {
-            bomb.first = true;
-            bomb.second.setPosition(calculate_3x3_non_wall_position(main_player.sprite.getPosition(),
-                                                                    main_player.sprite.getRotation() - 90));
-            main_player.has_bomb = false;
-            std::cout << "bomb dropped, mainpl\n";
-        }
-    }
-}*/
-
 void Map::update_player(Player &player) {
+
+
+    // todo : this is a dumb fix
+    if(player.team == TEAM_T && player.sprite.getTexture() != &team1_player_texture){
+        player.sprite.setTexture(team1_player_texture);
+    } else if(player.team == TEAM_CT && player.sprite.getTexture() != &team2_player_texture) {
+        player.sprite.setTexture(team2_player_texture);
+    }
+
 
     if (player.hp > 0) {
 
         if (player.player_state.shooting) {
+            player.single_shot_sound.setPosition(player.sprite.getPosition().x, player.sprite.getPosition().y, 0.f);
+            player.single_shot_sound.play();
             init_missile(player);
         }
 
-        if (player.player_state.planting_bomb) {
-            //check which team
-            player.plant_bomb(a_site_sprite, bomb, plant_animation);
-        }
 
-        if (player.player_state.defusing_bomb) {
-            //check which team
-            player.defuse_bomb(bomb, defuse_animation);
-        }
+        player.plant_bomb(a_site_sprite, bomb, player.player_state.planting_bomb);
 
-//        if(player.team == TEAM_T && !player.player_state.planting_bomb){
-//            player.plant_or_defuse_timer = 0;
-//        }
-//        if(player.team == TEAM_CT && !player.player_state.defusing_bomb){
-//            player.plant_or_defuse_timer = 0;
-//        }
-
-//        if(!player.player_state.planting_bomb || !player.player_state.defusing_bomb){
-//                player.plant_or_defuse_timer = 0;
-//        }
-
+        player.defuse_bomb(bomb, player.player_state.defusing_bomb);
 
         if(player.player_state.planted_bomb){
             bomb_planted = true;
@@ -612,9 +464,7 @@ void Map::update_player(Player &player) {
             bomb_defused = true;
         }
 
-        if (player.player_state.reloading) {
-            player.reload();
-        }
+        player.reload();
 
 
         if (player.player_state.dropping_bomb) {
@@ -636,16 +486,9 @@ void Map::update_player(Player &player) {
     } else {
         if (player.player_state.has_bomb) {
             player.drop_bomb(bomb, calculate_3x3_non_wall_position(player.sprite.getPosition(), player.sprite.getRotation() - 90));
-            std::cout << "bomb dropped from dead player\n";
+            //std::cout << "bomb dropped from dead player\n";
         }
     }
-    std::cout << "BOMB POS AT UPDATE_PLAYER: " << player.id  << "HAS? " << player.player_state.has_bomb << " DROPPING? " << player.player_state.dropping_bomb << " pos: " << bomb.second.getPosition().x << " " << bomb.second.getPosition().y << "\n";
-
-    PlayerState playerState = player.player_state;
-    player.player_state = {0};
-    player.player_state.has_bomb = playerState.has_bomb; // todo : make better
-    //player.player_state.dropping_bomb = playerState.dropping_bomb; // todo : make better
-    //player.player_state.reloading = playerState.reloading;
 }
 
 
@@ -680,38 +523,11 @@ void Map::check_collision_walls_players() {
     }
 }
 
-void Map::check_collision_walls_players_online() {
-
-    // check collision on top, bottom, left, right to the square a player is standing on
-
-    for (auto &[id, player]: players) {
-
-        int x = player.sprite.getPosition().x;
-        int y = player.sprite.getPosition().y;
-        sf::Vector2f player_pos = sf::Vector2f((x / 40) * 40 + 20, (y / 40) * 40 + 20);
-
-        sf::Vector2f theoretical_wall_pos[4] = {
-                {player_pos.x,      player_pos.y - 40},
-                {player_pos.x,      player_pos.y + 40},
-                {player_pos.x - 40, player_pos.y},
-                {player_pos.x + 40, player_pos.y},
-        };
-
-        int wall_can_move = false;
-        int player_can_move = true;
-        for (auto position: theoretical_wall_pos) {
-            if (walls_for_collision_map.count(position) > 0) {
-                sprite_collision(walls_for_collision_map[position].sprite, player.sprite, wall_can_move,
-                                 player_can_move);
-            }
-        }
-    }
-}
 
 void Map::check_collision_players() {
 
-    int player_can_move = false;
-    int other_player_can_move = false;
+    bool player_can_move = false;
+    bool other_player_can_move = false;
 
     for(auto player = players.begin(); player != players.end(); player++){
         if(player->second.hp > 0){
@@ -844,11 +660,16 @@ void Map::draw_explosions(sf::RenderWindow &window) {
 }
 
 void Map::draw_plant_defuse_animations(sf::RenderWindow &window) {
-    if (plant_animation.elapsedTime > 0) {
-        window.draw(plant_animation.sprite);
-    }
-    if (defuse_animation.elapsedTime > 0) {
-        window.draw(defuse_animation.sprite);
+
+    for(auto &[id, player] : players){
+        if (player.plant_animation.elapsedTime > 0) {
+            window.draw(player.plant_animation.sprite);
+            std::cout << "DRAWING PLANT ANIM\n";
+        }
+        if (player.defuse_animation.elapsedTime > 0) {
+            window.draw(player.defuse_animation.sprite);
+            std::cout << "DRAWING DEFUSE ANIM\n";
+        }
     }
 }
 
@@ -996,7 +817,8 @@ void Map::reset_for_new_round() {
     init_walls(map_level);
 }
 
-void Map::update_online(std::vector<PlayerObject> &player_objects, std::vector<MissileObject> &missile_objects){
+void Map::update_online(std::vector<PlayerObject> &player_objects, std::vector<MissileObject> &missile_objects,
+                        BombObject &bomb_object) {
     // update players
 
     //check if objects < players
@@ -1022,17 +844,17 @@ void Map::update_online(std::vector<PlayerObject> &player_objects, std::vector<M
     //      player.transfer_data_from(player_objects[player.id])
     //      update_player(player);
     for (auto &object: player_objects) {
-        std::cout << "CLIENT, MAP, PLAYER_OBJECT, id = " << object.id << " PLANT TIMER: " << object.plant_or_defuse_timer << "\n";
+       // std::cout << "CLIENT, MAP, PLAYER_OBJECT, id = " << object.id << " PLANT TIMER: " << object.plant_or_defuse_timer << "\n";
         if (players.find(object.id) == players.end()) {
             players[object.id] = init_new_player(object.id, object.pos_x, object.pos_y, object.team);
         }
-        if(players[object.id].player_state.has_bomb && !object.player_state.has_bomb && !bomb_planted){
-            players[object.id].drop_bomb(
-                    bomb, calculate_3x3_non_wall_position(players[object.id].sprite.getPosition(), players[object.id].sprite.getRotation() - 90));
-        } // todo : THIS IS A DUMB FIX, PLEASE REVISIT, ALSO WORKS SHITTY, PLEASE
         players[object.id].transfer_data_from(object);
 
-        update_player(players[object.id]);
+//        if(object.id == main_player_id) {
+//            sf::Listener::setPosition(players[main_player_id].sprite.getPosition().x, players[main_player_id].sprite.getPosition().y, 0.f);
+//        }
+
+        //update_player(players[object.id]);
     }
     missiles.clear(); // todo: this is bad, need to redo later
 
@@ -1041,6 +863,8 @@ void Map::update_online(std::vector<PlayerObject> &player_objects, std::vector<M
         missile.transfer_data_from(missile_object);
         missiles.push_back(missile);
     }
+
+    retrieve_bomb_data_from(bomb_object);
 }
 
 void Map::update_and_draw_players(sf::RenderWindow &window, sf::Vector2f &mouse_position, bool gained_focus) {
@@ -1050,11 +874,11 @@ void Map::update_and_draw_players(sf::RenderWindow &window, sf::Vector2f &mouse_
             if (id == main_player_id && gained_focus) {
                 PlayerEvent player_event = {0};
                 player.rotate(mouse_position);
-                player.get_inputs(player_event);
-                player.verify_and_assign_player_state(player_event);
-                //std::cout << "CLIENT PLAYER PLANT TIMER BEFORE UPDATE: " << player.plant_or_defuse_timer << "\n";
+                //player.get_inputs(player_event);
+                //player.verify_and_assign_player_state(player_event);
+                sf::Listener::setPosition(player.sprite.getPosition().x, player.sprite.getPosition().y, 0.f);
+                //std::cout << "MAIN PLAYER TEAM/PLANTING/DEFUSING " << (uint16)player.team << " " << player.player_state.planting_bomb << " " << player.player_state.defusing_bomb << " " << player.plant_or_defuse_timer << "\n";
             }
-
             update_player(player);
             //std::cout << "CLIENT PLAYER PLANT TIMER AFTER UPDATE: " << player.plant_or_defuse_timer << "\n";
             window.draw(player.sprite);
@@ -1066,11 +890,9 @@ void Map::update_players(std::vector<std::pair<uint64, PlayerEvent>> &player_eve
     for(auto &[id, player_event] : player_events){
         if(players[id].hp > 0){
             players[id].verify_and_assign_player_state(player_event);
-            std::cout << "SERVER UPDATE_PLAYERS PLAYER DROPS BOMB:  " << players[id].player_state.dropping_bomb << " HAS_BOMB? "
-                      << players[id].player_state.has_bomb << "\n";
+            //std::cout << "SERVER UPDATE_PLAYERS PLAYER DROPS BOMB:  " << players[id].player_state.dropping_bomb << " HAS_BOMB? " << players[id].player_state.has_bomb << "\n";
             update_player(players[id]);
-            std::cout << "SERVER UPDATE_PLAYERS PLAYER DROPS BOMB AFTER UPDATE:  " << players[id].player_state.dropping_bomb << " HAS_BOMB? "
-                      << players[id].player_state.has_bomb << "\n";
+            //std::cout << "SERVER UPDATE_PLAYERS PLAYER DROPS BOMB AFTER UPDATE:  " << players[id].player_state.dropping_bomb << " HAS_BOMB? " << players[id].player_state.has_bomb << "\n";
             //std::cout << "PLANTING AT SERVER UPDATE PLAYERS: " << players[id].plant_or_defuse_timer << "\n";
         }
     }
@@ -1099,4 +921,15 @@ void Map::play_tick_and_draw(sf::RenderWindow &window, sf::Vector2f mouse_positi
     check_collision_players_ammo();
     check_collision_players_bomb();
     check_collision_walls_players();
+}
+
+void Map::transfer_bomb_data_to(BombObject& bomb_object){
+    bomb_object.dropped = this->bomb.first;
+    bomb_object.pos_x = (uint16)this->bomb.second.getPosition().x;
+    bomb_object.pos_y = (uint16)this->bomb.second.getPosition().y;
+}
+
+void Map::retrieve_bomb_data_from(BombObject& bomb_object){
+    this->bomb.first = bomb_object.dropped;
+    this->bomb.second.setPosition((float)bomb_object.pos_x, (float)bomb_object.pos_y);
 }

@@ -90,6 +90,7 @@ bool Server::send_data() {
         for (auto &[client_id, client]: clients) {
             sf::Packet packet;
             packet << tick;
+            packet << bomb_object;
             packet << player_objects.size();
             packet << missile_objects.size();
             for (auto &[id, object]: player_objects) {
@@ -98,7 +99,7 @@ bool Server::send_data() {
 #endif
                 object.tick = tick;
                 packet << object;
-                std::cout << "SERVER SEND PLANT TIMER: " << object.plant_or_defuse_timer << "\n";
+                //std::cout << "SERVER SEND PLANT TIMER: " << object.plant_or_defuse_timer << "\n";
             }
 
             for (auto &[id, missile]: missile_objects) {
@@ -151,6 +152,7 @@ void Server::disconnect() {
     clients.clear();
     player_objects.clear();
     missile_objects.clear();
+
 
     map.players.clear();
     map.missiles.clear();
@@ -216,16 +218,20 @@ void Server::play_tick() {
             object.main_menu_event.map1 = false;
             object.main_menu_event.map2 = false;
             object.main_menu_event.map3 = true;
-            std::cout << "MAP3 BUTTON PRESSED\n";
-        } else if (player_event.chose_deathmatch_button_pressed) {
+        }
+        if (player_event.chose_deathmatch_button_pressed) {
             object.main_menu_event.death_match_game_mode = true;
             object.main_menu_event.takeover_game_mode = false;
         } else if (player_event.chose_takeover_button_pressed) {
             object.main_menu_event.death_match_game_mode = false;
             object.main_menu_event.takeover_game_mode = true;
-        } else if (player_event.ready_button_pressed) {
+        }
+        if (player_event.ready_button_pressed) {
             object.main_menu_event.ready_to_play = ~object.main_menu_event.ready_to_play;
-            std::cout << "READY PRESSED\n\n\n";
+        }
+
+        if(!object.main_menu_event.ready_to_play){
+            object.main_menu_event.in_game = false;
         }
 
 
@@ -257,6 +263,7 @@ void Server::play_tick() {
         }
 
         if (everyone_ready) {
+            takeover.reset();
             for (auto &[id, player]: player_objects) {
                 map.players[id] = map.init_new_player(id, player.pos_x, player.pos_y, player.team);
 //                std::cout << "if(everyone_ready){\n"
@@ -307,8 +314,7 @@ void Server::play_tick() {
         for (auto &missile: map.missiles) {
             missile.transfer_data_to(missile_objects[missile.id]);
         }
-
-
+        map.transfer_bomb_data_to(bomb_object);
     }
 }
 

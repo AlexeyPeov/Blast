@@ -27,6 +27,7 @@ struct Server {
 
     std::unordered_map<uint64_t, PlayerObject> player_objects;
     std::unordered_map<uint64_t, MissileObject> missile_objects;
+    BombObject bomb_object;
 
     //std::unordered_map<uint64_t, std::pair<std::unordered_map<uint64_t, Object>, uint8_t>> packets;
     bool active = false;

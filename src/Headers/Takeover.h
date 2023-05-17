@@ -31,11 +31,11 @@ struct TeamOnline{
         float default_spawn_y = 0;
 
         if(object.team == TEAM_T){
-//            default_spawn_x = 188;
-//            default_spawn_y = 1790;
+            default_spawn_x = 188;
+            default_spawn_y = 1790;
 
-            default_spawn_x = 710;
-            default_spawn_y = 445;
+//            default_spawn_x = 710;
+//            default_spawn_y = 445;
         } else if(object.team == TEAM_CT){
             default_spawn_x = 310;
             default_spawn_y = 445;
@@ -44,8 +44,8 @@ struct TeamOnline{
         return position;
     }
     static sf::Vector2f get_bomb_spawn_position(){
-//        return sf::Vector2f {188 + 40, 1790};
-        return sf::Vector2f { 710, 445};
+        return sf::Vector2f {188 + 40, 1790};
+//        return sf::Vector2f { 710, 445};
     }
 };
 
@@ -100,11 +100,12 @@ struct Takeover {
     ~Takeover(){}
 
     void init() {
-        for (auto &[id, object] : map->players){
-            if(object.team == TEAM_T){
-                team_t_online.insert(object);
-            } else if(object.team == TEAM_CT){
-                team_ct_online.insert(object);
+        for (auto &[id, player] : map->players){
+            if(player.team == TEAM_T){
+                team_t_online.insert(player);
+            } else if(player.team == TEAM_CT){
+                //player.sprite.setTexture(map->team2_player_texture);
+                team_ct_online.insert(player);
             }
         }
     }
@@ -118,6 +119,7 @@ struct Takeover {
         for(auto &[id, object] : map->players){
             sf::Vector2f spawn = TeamOnline::get_spawn_position(object);
             object.sprite.setPosition(spawn);
+            object.player_state.shooting = false;
             //std::cout << "BEFORE ROUND SET POS " << spawn.x << " " << spawn.y << "\n";
             object.hp = 100;
             object.mag_ammo = MAG_CAPACITY;
@@ -129,13 +131,13 @@ struct Takeover {
 
     void in_round() {
         if (!map->team_t_alive()) {
-            std::cout << "TAKEOVER SAYS TEAM T IS DEAD\n";
+            //std::cout << "TAKEOVER SAYS TEAM T IS DEAD\n";
             is_in_round = false;
             score_ct++;
             current_round_team_won = TEAM_CT;
             some_team_won = true;
         } else if (!map->team_ct_alive()) {
-            std::cout << "TAKEOVER SAYS TEAM CT IS DEAD\n";
+            //std::cout << "TAKEOVER SAYS TEAM CT IS DEAD\n";
             is_in_round = false;
             score_t++;
             some_team_won = true;
@@ -219,6 +221,16 @@ struct Takeover {
         is_reset_for_new_round = false;
     }
 
+    void change_teams(Player &player) {
+        if(player.team == TEAM_T){
+            player.team = TEAM_CT;
+            player.sprite.setTexture(map->team2_player_texture);
+        } else {
+            player.team = TEAM_T;
+            player.sprite.setTexture(map->team1_player_texture);
+        }
+    }
+
     void reset_for_new_round() {
         if(!game_over){
             current_round++;
@@ -231,6 +243,7 @@ struct Takeover {
 
             bomb_planted = false;
             map->reset_for_new_round();
+
             for(auto & player : map->players){
                 player.second.clear_bomb_related_flags();
             }
@@ -287,14 +300,6 @@ struct Takeover {
         }
     }
 
-    void change_teams(Player &player) {
-        if(player.team == TEAM_T){
-            player.team = TEAM_CT;
-        } else {
-            player.team = TEAM_T;
-        }
-    }
-
     void reset(){
         current_round = 1;
         game_started = false;
@@ -344,6 +349,7 @@ struct Takeover {
                 .is_retake = is_retake,
                 .is_after_round = is_after_round,
                 .round_seconds_left = round_seconds_left,
+                .game_over = game_over,
         };
     }
 
@@ -355,7 +361,8 @@ struct Takeover {
         is_in_round = sync.is_in_round;
         is_retake = sync.is_retake;
         is_after_round = sync.is_after_round;
-        round_seconds_left = sync.round_seconds_left;
+        game_over = sync.game_over;
+       // some_team_won = sync.some_team_won;
     }
 
     void update() {

@@ -38,20 +38,25 @@ struct Player : Entity {
     sf::Sound single_shot_sound;
     sf::Sound reload_sound;
 
+    Animation plant_animation;
+    Animation defuse_animation;
+
 
     Player(){}
-    Player(sf::Sprite sprite, float movement_speed, float rotation_degree, int hp, uint64_t id, uint8 team)
-        : Entity{ std::move(sprite), movement_speed, rotation_degree}, hp{hp}, id{id}, team{team}{
+    Player(sf::Sprite sprite, float movement_speed, float rotation_degree, int hp, uint64_t id, uint8 team, Animation &plant_animation, Animation &defuse_animation)
+        : Entity{ std::move(sprite), movement_speed, rotation_degree}, hp{hp}, id{id}, team{team}, plant_animation{plant_animation}, defuse_animation{defuse_animation}{
         this->movement_speed = movement_speed;
         this->rotation_degree = rotation_degree;
         this-> hp = hp;
         this->id = id;
         this->team = team;
+        this->plant_animation = plant_animation;
+        this->defuse_animation = defuse_animation;
     }
 
     void reload();
 
-    bool can_shoot() const;
+    bool can_shoot();
 
     bool if_wants_or_needs_to_reload();
 
@@ -69,9 +74,9 @@ struct Player : Entity {
 
     void transfer_data_to(PlayerEvent &player_event, bool gained_focus);
 
-    void plant_bomb(sf::Sprite &plant_area, std::pair<bool, sf::Sprite> &bomb, Animation &plant_animation);
+    void plant_bomb(sf::Sprite &plant_area, std::pair<bool, sf::Sprite> &bomb, bool pressed_plant_button);
 
-    void defuse_bomb(std::pair<bool, sf::Sprite> &bomb, Animation &defuse_animation);
+    void defuse_bomb(std::pair<bool, sf::Sprite> &bomb, bool pressed_defuse_button);
 
     void clear_bomb_related_flags();
 
@@ -160,10 +165,10 @@ struct Player : Entity {
 
     void verify_and_assign_player_state(PlayerEvent &player_event);
 
-    void set_player_state_reloading();
+    void verify_need_to_reload(bool reload_button_pressed);
 
     void transfer_data_to(PlayerObject &object);
 
-    void defuse_bomb(std::pair<bool, sf::Sprite> &bomb, bool obj_shooting, Animation &defuse_animation);
+    //void defuse_bomb(std::pair<bool, sf::Sprite> &bomb, bool obj_shooting, Animation &defuse_animation);
 };
 #endif

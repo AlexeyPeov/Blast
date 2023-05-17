@@ -77,6 +77,7 @@ struct Sync{
     uint64 is_retake : 1;
     uint64 is_after_round : 1;
     uint64 round_seconds_left : 8;
+    uint64 game_over : 1;
 };
 
 struct PlayerObject {
@@ -117,15 +118,9 @@ struct MissileObject{
 };
 
 struct BombObject{
-    uint64 player_id = 0;
-    bool life = true; // todo : implement
-    uint64 player_who_shot = 0;
-
-    float32 position_x = 0.0;
-    float32 position_y = 0.0;
-
-    float32 previous_position_x = 0.0;
-    float32 previous_position_y = 0.0;
+    uint32 dropped : 1;
+    uint32 pos_x : 15;
+    uint32 pos_y : 15;
 };
 
 
@@ -153,6 +148,10 @@ namespace obj {
     sf::Packet& operator << (sf::Packet& packet, const MissileObject &object);
 
     sf::Packet& operator >> (sf::Packet& packet, MissileObject& object);
+
+    sf::Packet& operator << (sf::Packet& packet, const BombObject &object);
+
+    sf::Packet& operator >> (sf::Packet& packet, BombObject& object);
 
     uint64 generate_random_id();
 

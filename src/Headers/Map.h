@@ -79,6 +79,7 @@ struct Map {
     sf::SoundBuffer running_buffer;
     sf::SoundBuffer bomb_tick_buffer;
     sf::SoundBuffer bomb_explosion_buffer;
+    sf::SoundBuffer missile_explosion_buffer;
 
     sf::SoundBuffer bomb_planted_buffer;
     sf::SoundBuffer bomb_defused_buffer;
@@ -87,6 +88,7 @@ struct Map {
     sf::SoundBuffer ct_win_buffer;
 
 
+    sf::Sound missile_explosion_sound;
     sf::Sound bomb_tick_sound;
     sf::Sound bomb_explosion_sound;
 
@@ -133,7 +135,7 @@ struct Map {
 
     void init_main_player(short team);
 
-    Player init_new_player(uint64_t id, float pos_x, float pos_y, uint8 team) const;
+    Player init_new_player(uint64_t id, float pos_x, float pos_y, uint8 team);
 
     void init_explosion(Missile &missile);
 
@@ -211,8 +213,8 @@ struct Map {
 
     void check_collision_missiles_walls_players_online(std::unordered_map<uint64_t, PlayerObject> &objects);
 
-    void update_online(std::vector<PlayerObject> &player_objects,
-                       std::vector<MissileObject> &missile_objects);
+    void update_online(std::vector<PlayerObject> &player_objects, std::vector<MissileObject> &missile_objects,
+                       BombObject &bomb_object);
 
     void update_player(Player &player);
 
@@ -231,5 +233,9 @@ struct Map {
     void update_and_draw_missiles(sf::RenderWindow &window);
 
     void update_and_draw_explosions(sf::RenderWindow &window);
+
+    void transfer_bomb_data_to(BombObject &bomb_object);
+
+    void retrieve_bomb_data_from(BombObject &bomb_object);
 };
 #endif

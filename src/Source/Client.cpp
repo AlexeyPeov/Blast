@@ -89,6 +89,7 @@ void Client::disconnect() {
     this->socket.unbind();
     this->player_objects.clear();
     this->missile_objects.clear();
+    this->bomb_object = {0};
     this->player_object = PlayerObject();
     this->player_event = {0};
     std::cout << "Client stopped.\n";
@@ -129,11 +130,15 @@ void Client::receive_data() {
     while (socket.receive(packet, sender, port) == sf::Socket::Done) {
         // Process received data
         uint64_t curr_tick;
-        packet >> curr_tick;
-        size_t player_objects_count; // todo: player_objects_count - players size, missile_objects_count - missiles size
+        size_t player_objects_count;
         size_t missile_objects_count;
+        uint32 bomb_obj;
+
+        packet >> curr_tick;
+        packet >> bomb_obj;
         packet >> player_objects_count;
         packet >> missile_objects_count;
+
 
 #ifdef CLIENT_DEBUG_RECEIVE
         if(curr_tick == player_object.tick + 1){
@@ -153,6 +158,9 @@ void Client::receive_data() {
         if(curr_tick != tick){
             player_objects.clear();
             missile_objects.clear();
+
+            this->bomb_object = *(BombObject*)&bomb_obj;
+
 #ifdef CLIENT_DEBUG_RECEIVE
             std::cout << "COUNT:" << player_objects_count << "\n";
             std::cout << "RECEIVED as CL: " << curr_tick << " players count" << player_objects_count << "\n";
@@ -162,7 +170,7 @@ void Client::receive_data() {
                 packet >> obj;
                 player_objects.push_back(obj);
 
-                std::cout << "CLIENT RECEIVE PLANT TIMER: " << obj.plant_or_defuse_timer << "\n";
+               // std::cout << "CLIENT RECEIVE PLANT TIMER: " << obj.plant_or_defuse_timer << "\n";
 
                 if(obj.id == player_object.id){
                     player_object = obj;

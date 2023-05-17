@@ -184,17 +184,6 @@ void MainMenu::drawMultiplayerLobby(sf::RenderWindow &window) {
     float team_1_text_offset = -40 * 3;
     float team_2_text_offset = -40 * 3;
 
-//    if (client->player_objects[client->id].team == 1) {
-//        sf::Text text(client->player_objects[client->id].nickname, font);
-//        setUpText(text, 24, viewCenter.x - 60 * 3, viewCenter.y + team_1_text_offset, sf::Color::White);
-//        team_1_text_offset += 20 * 3;
-//        team_1_text[client->player_objects[client->id].id] = text;
-//    } else {
-//        sf::Text text(client->player_objects[client->id].nickname, font);
-//        setUpText(text, 24, viewCenter.x + 45 * 3, viewCenter.y + team_2_text_offset, sf::Color::White);
-//        team_2_text_offset += 20 * 3;
-//        team_2_text[client->player_objects[client->id].id] = text;
-//    }
 
     for (auto &player: client->player_objects) {
         if (player.team == TEAM_T) {
@@ -245,30 +234,18 @@ void MainMenu::drawMultiplayerLobby(sf::RenderWindow &window) {
     for (auto& obj : client->player_objects){
         if(!obj.main_menu_event.ready_to_play){
             everyone_ready = false;
-            std::cout << "EVERYONE READY FALSE\n";
+            //std::cout << "EVERYONE READY FALSE\n";
             break;
         }
     }
     if(!client->player_object.main_menu_event.ready_to_play){
         everyone_ready = false;
-        std::cout << "EVERYONE READY FALSE\n";
+        //std::cout << "EVERYONE READY FALSE\n";
     }
 
     if(everyone_ready){
-        std::cout << "EVERYONE READY TRUE\n";
+        //std::cout << "EVERYONE READY TRUE\n";
     }
-//    if(!client->host){
-//        for (auto& obj : client->player_objects){
-//            if(object::is_host(object)){
-//                object::choose_map(client->object ,object::which_map_is_chosen(object));
-//                object::choose_game_mode(client->object ,object::which_game_mode_is_chosen(object));
-//                break;
-//            }
-//        }
-//    }
-
-
-
 
 
     // changing teams
@@ -294,11 +271,6 @@ void MainMenu::drawMultiplayerLobby(sf::RenderWindow &window) {
         //if(host){
             text4.setFillColor(sf::Color::Yellow);
             if (Mouse::clicked()) {
-//                if(client->player_event.ready_button_pressed){
-//                    client->player_event.ready_button_pressed = false;
-//                } else {
-//                    client->player_event.ready_button_pressed = true;
-//                }
                 client->player_event.ready_button_pressed = true;
             }
       //  }
@@ -328,7 +300,7 @@ void MainMenu::drawMultiplayerLobby(sf::RenderWindow &window) {
         short game_mode = obj::which_game_mode_is_chosen(client->player_object);
 
         if(m == 0){
-            std::cerr << "MAP IS ZERO\n";
+            std::cerr << "MAP IS ZERO AT MAIN MENU\n";
             exit (-1);
         }
         map->init_walls(m);
@@ -343,31 +315,6 @@ void MainMenu::drawMultiplayerLobby(sf::RenderWindow &window) {
         }
     }
 
-    /*if (mouseCursorCollidesWithMenuItem(mousePos, text3.getPosition())) {
-        text3.setFillColor(sf::Color::Yellow);
-        if(clicked()){
-            if(host){
-                menuState = MenuState::MULTIPLAYER_LOBBY;
-            } else {
-                menuState = MenuState::CLIENT;
-            }
-
-        }
-    } else if (mouseCursorCollidesWithMenuItem(mousePos, hostRadioBox.getPosition())) {
-        hostRadioBox.setOutlineColor(sf::Color::Yellow);
-        if (clicked()) {
-            host = !host;
-        }
-    } else if (mouseCursorCollidesWithMenuItem(mousePos, text4.getPosition())) {
-        text4.setFillColor(sf::Color::Yellow);
-        if (clicked()) {
-            menuState = MenuState::CHOOSING_GAME_STATE;
-        }
-    }
-
-    if (host) {
-        hostRadioBox.setFillColor(sf::Color(197, 255, 202));
-    }*/
     window.draw(menuRect);
     window.draw(chooseTeam);
     window.draw(text1);
@@ -496,43 +443,31 @@ void MainMenu::drawHostOptionsMenu(sf::RenderWindow &window)  {
         text2.setFillColor(sf::Color::Yellow);
         if(Mouse::clicked()){
             map_chosen = 1;
-            client->player_event.chose_map_1_button_pressed = true;
         }
     } else if (Mouse::cursorCollidesWithItem(mousePos, text3.getGlobalBounds())) {
         text3.setFillColor(sf::Color::Yellow);
         if(Mouse::clicked()){
             map_chosen = 2;
-            client->player_event.chose_map_2_button_pressed = true;
         }
     } else if (Mouse::cursorCollidesWithItem(mousePos, text4.getGlobalBounds())) {
         text4.setFillColor(sf::Color::Yellow);
         if(Mouse::clicked()){
             map_chosen = 3;
-            client->player_event.chose_map_3_button_pressed = true;
         }
     } else if (Mouse::cursorCollidesWithItem(mousePos, death_match_text.getGlobalBounds())) {
         death_match_text.setFillColor(sf::Color::Yellow);
         if(Mouse::clicked()){
             game_mode_chosen = 1;
-            client->player_event.chose_deathmatch_button_pressed = true;
         }
     } else if (Mouse::cursorCollidesWithItem(mousePos, takeover_text.getGlobalBounds())) {
         takeover_text.setFillColor(sf::Color::Yellow);
         if(Mouse::clicked()){
             game_mode_chosen = 2;
-            client->player_event.chose_takeover_button_pressed = true;
         }
     } else if (Mouse::cursorCollidesWithItem(mousePos, lobby_text.getGlobalBounds())) {
         lobby_text.setFillColor(sf::Color::Yellow);
         if (Mouse::clicked()) {
             menuState = MenuState::MULTIPLAYER_LOBBY;
-//              object::choose_map(client->object, map_chosen);
-//              object::choose_game_mode(client->object, game_mode_chosen);
-//            map->init_map_textures();
-//            map->init_main_player();
-//            map->init_walls(map_chosen);
-//            menuState = MenuState::START;
-//            *map->gameState = GameState::IN_GAME;
         }
     } else if (Mouse::cursorCollidesWithItem(mousePos, text5.getGlobalBounds())) {
         text5.setFillColor(sf::Color::Yellow);
@@ -555,6 +490,13 @@ void MainMenu::drawHostOptionsMenu(sf::RenderWindow &window)  {
     } else if (game_mode_chosen == 2){
         takeover_text.setFillColor(sf::Color::Yellow);
     }
+
+    client->player_event.chose_map_1_button_pressed = (map_chosen == 1);
+    client->player_event.chose_map_2_button_pressed = (map_chosen == 2);
+    client->player_event.chose_map_3_button_pressed = (map_chosen == 3);
+
+    client->player_event.chose_deathmatch_button_pressed = (game_mode_chosen == 1);
+    client->player_event.chose_takeover_button_pressed = (game_mode_chosen == 2);
 
 
     window.draw(menuRect);

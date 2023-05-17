@@ -111,12 +111,20 @@ void Game::run() {
         }
         if (client.active) {
             client.receive_data();
-            map.update_online(client.player_objects, client.missile_objects);
+            map.update_online(client.player_objects, client.missile_objects, client.bomb_object);
         }
 
 
         if (gameState == GameState::MAIN_MENU) {
             mainMenu.draw(window);
+            if(mainMenu.menuState == MenuState::MAIN_MENU){
+                if(server.active){
+                    server.disconnect();
+                }
+                if(client.active){
+                    client.disconnect();
+                }
+            }
           //  std::cout << client.objects.size() << " " << map.players.size() << "\n";
         }
         else  {
@@ -405,9 +413,7 @@ void Game::draw_team_won(int team){
         replay_text.setFillColor(sf::Color::Yellow);
         if (Mouse::clicked()) {
             gameState = GameState::MAIN_MENU;
-            client.player_event.ready_button_pressed = false;
-            client.player_object = PlayerObject();
-            takeover.reset();
+            client.player_event.ready_button_pressed = true;
             if(server.active){
                 mainMenu.menuState = MenuState::HOST_OPTIONS;
             } else {
@@ -420,11 +426,6 @@ void Game::draw_team_won(int team){
         if (Mouse::clicked()) {
             gameState = GameState::MAIN_MENU;
             mainMenu.menuState = MenuState::MAIN_MENU;
-            server.active = false;
-            server.disconnect();
-            client.disconnect();
-            takeover.reset();
-            client.player_object = PlayerObject();
         }
     }
     window.draw(menu_rect_in_game);
