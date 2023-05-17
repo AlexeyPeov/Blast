@@ -237,5 +237,7 @@ struct Map {
     void transfer_bomb_data_to(BombObject &bomb_object);
 
     void retrieve_bomb_data_from(BombObject &bomb_object);
+
+    void draw_bomb(sf::RenderWindow &window);
 };
 #endif

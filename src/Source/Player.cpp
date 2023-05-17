@@ -26,8 +26,8 @@ bool Player::can_shoot() {
 void Player::verify_need_to_reload(bool reload_button_pressed) {
     if((mag_ammo == 0 || reload_button_pressed) && !player_state.reloading && mag_ammo != MAG_CAPACITY && leftover_ammo > 0){
         reload_timer = 0;
-        player_state.reloading = true;
         reload_sound.play();
+        player_state.reloading = true;
     }
 }
 

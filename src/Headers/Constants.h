@@ -34,7 +34,7 @@ const int32 MISSILE_DAMAGE = 25;
 const int32 MISSILE_MOVEMENT_SPEED = 40;
 
 const int16 MAX_AMMO = 90;
-const int16 MAG_CAPACITY = 30000;
+const int16 MAG_CAPACITY = 30;
 const int32 RELOAD_TIME = 60 * 3;
 const float32 RUNNING_MOVEMENT_SPEED = 2.9;
 const float32 WALKING_MOVEMENT_SPEED = 1.5;

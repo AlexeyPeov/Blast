@@ -244,12 +244,13 @@ Player Map::init_new_player(uint64_t id, float pos_x, float pos_y, uint8 team) {
     player.running_sound.setAttenuation(12.f);
 
 
-    player.reload_sound.setMinDistance(45.f);
-    player.reload_sound.setAttenuation(25.f);
-
     player.single_shot_sound.setMinDistance(400.f);
     player.single_shot_sound.setAttenuation(15.f);
 
+
+
+    player.reload_sound.setMinDistance(55.f);
+    player.reload_sound.setAttenuation(25.f);
 
     player.reload_sound.setVolume(60.f);
 
@@ -431,7 +432,6 @@ sf::Vector2f Map::calculate_3x3_non_wall_position(const sf::Vector2f &position, 
 }
 
 void Map::update_player(Player &player) {
-
 
     // todo : this is a dumb fix
     if(player.team == TEAM_T && player.sprite.getTexture() != &team1_player_texture){
@@ -642,7 +642,9 @@ void Map::draw_missiles(sf::RenderWindow &window) {
 
 void Map::draw_dropped_ammo(sf::RenderWindow &window) {
     for (const auto &[amount, ammo]: dropped_ammo) window.draw(ammo);
+}
 
+void Map::draw_bomb(sf::RenderWindow &window){
     auto &[dropped, bomb_spr] = bomb;
     if (dropped) { window.draw(bomb_spr); }
 }
@@ -848,11 +850,15 @@ void Map::update_online(std::vector<PlayerObject> &player_objects, std::vector<M
         if (players.find(object.id) == players.end()) {
             players[object.id] = init_new_player(object.id, object.pos_x, object.pos_y, object.team);
         }
-        players[object.id].transfer_data_from(object);
+        if(object.id == main_player_id) {
+            sf::Listener::setPosition(players[main_player_id].sprite.getPosition().x, players[main_player_id].sprite.getPosition().y, 0.f);
 
-//        if(object.id == main_player_id) {
-//            sf::Listener::setPosition(players[main_player_id].sprite.getPosition().x, players[main_player_id].sprite.getPosition().y, 0.f);
-//        }
+            if(object.player_state.reloading && !players[main_player_id].player_state.reloading){
+                players[main_player_id].reload_sound.play(); // todo : dumb fux
+            }
+
+        }
+        players[object.id].transfer_data_from(object);
 
         //update_player(players[object.id]);
     }
