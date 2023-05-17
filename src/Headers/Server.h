@@ -23,15 +23,15 @@ struct Server {
 
     std::unordered_map<uint64, std::unique_ptr<Client>> clients;
 
-    sf::Uint64 host_client_id = 0;
+    uint64 host_client_id = 0;
 
-    std::unordered_map<uint64_t, PlayerObject> player_objects;
-    std::unordered_map<uint64_t, MissileObject> missile_objects;
+    std::unordered_map<uint64, PlayerObject> player_objects;
+    std::unordered_map<uint64, MissileObject> missile_objects;
     BombObject bomb_object;
 
     //std::unordered_map<uint64_t, std::pair<std::unordered_map<uint64_t, Object>, uint8_t>> packets;
     bool active = false;
-    uint64_t tick = 0;
+    uint64 tick = 0;
 
     // receive data
     // run game loop

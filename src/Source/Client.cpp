@@ -129,9 +129,9 @@ void Client::receive_data() {
 
     while (socket.receive(packet, sender, port) == sf::Socket::Done) {
         // Process received data
-        uint64_t curr_tick;
-        size_t player_objects_count;
-        size_t missile_objects_count;
+        uint64 curr_tick;
+        uint64 player_objects_count;
+        uint64 missile_objects_count;
         uint32 bomb_obj;
 
         packet >> curr_tick;

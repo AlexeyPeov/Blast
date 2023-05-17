@@ -54,7 +54,7 @@ struct Client {
         this->host_port = port;
     }
 
-    bool connect(sf::IpAddress address, uint16_t port);
+    bool connect(sf::IpAddress address, uint16 port);
 
     void disconnect();
 

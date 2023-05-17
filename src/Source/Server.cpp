@@ -91,8 +91,8 @@ bool Server::send_data() {
             sf::Packet packet;
             packet << tick;
             packet << bomb_object;
-            packet << player_objects.size();
-            packet << missile_objects.size();
+            packet << (uint64)player_objects.size();
+            packet << (uint64)missile_objects.size();
             for (auto &[id, object]: player_objects) {
 #ifdef SERVER_DEBUG_SEND
                 std::cout << "packing object:" << object.id << "-\n";
@@ -138,7 +138,7 @@ void Server::disconnect() {
     for (auto &[client_id, client]: clients) {
         sf::Packet packet;
         packet << tick;
-        packet << player_objects.size();
+        packet << (uint64)player_objects.size();
         for (auto &[id, object]: player_objects) {
             packet << object;
         }
