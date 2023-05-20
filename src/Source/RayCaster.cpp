@@ -21,7 +21,6 @@ namespace RayCaster {
         sf::RenderStates render;
         render.blendMode = sf::BlendNone;
 
-        const int maxSteps = 250;
         const int step_distance = 3;
 
 

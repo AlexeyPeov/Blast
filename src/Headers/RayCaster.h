@@ -14,6 +14,7 @@ namespace RayCaster {
     const float PI = 3.14159265f;
     const float BIG_FLOAT_NUMBER = 400000000.0;
     const int num_rays = 360;
+    const uint32 maxSteps = 150;
 
 
     float distanceToScene(sf::Vector2f point, std::unordered_map<sf::Vector2f, Wall, Vector2fHash> &walls);

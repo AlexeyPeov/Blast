@@ -140,7 +140,6 @@ void Game::run() {
             }
 
             map.play_tick_and_draw(window, window.mapPixelToCoords(sf::Mouse::getPosition(window)), gained_focus);
-            map.draw_plant_defuse_animations(window);
             map.draw_dropped_ammo(window);
 
             if(map.players[map.main_player_id].team == TEAM_CT) { map.draw_bomb(window); } // to make ct see bomb only when directly looking at it
@@ -168,6 +167,8 @@ void Game::run() {
                 window.draw(map.players[map.main_player_id].sprite);
             }
             map.draw_explosions(window);
+            map.draw_plant_defuse_animations(window);
+
 
             //map.draw_missiles(window);
             //map.draw_explosions(window);
@@ -484,6 +485,8 @@ void Game::draw_score_menu(){
 }
 
 void Game::draw_user_interface(){
+//    sf::Vector2f windowSize = (sf::Vector2f)window.getSize();
+//    sf::Vector2f viewCenter = (sf::Vector2f){window.getSize().x / 2.f, window.getSize().y / 2.f};
     sf::Vector2f viewCenter = window.getView().getCenter();
 
     sf::Vector2f low_left_corner = {viewCenter.x - (viewSize.x / 2) + 150,viewCenter.y + (viewSize.y / 2) - 50 };
