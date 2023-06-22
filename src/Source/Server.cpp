@@ -2,6 +2,8 @@
 
 
 bool Server::set_listener() {
+    std::unique_lock<std::mutex> lock(server_mutex);
+
     this->server_socket.setBlocking(false);
     if (this->server_socket.bind(53000) != sf::Socket::Done) {
         std::cerr << "Error setting up listener\n";
@@ -10,6 +12,8 @@ bool Server::set_listener() {
     map.init_map_textures();
     this->active = true;
     std::cout << "Server running..\n";
+
+    lock.unlock();
     return active;
 }
 
@@ -50,7 +54,7 @@ void Server::receive_data() {
                 player_objects[object_id] = player_object;
                 clients[object_id] = std::make_unique<Client>(object_id, "", sender, port);
 
-                std::cout << "PLAYER OBJECT ON CONNECT: HOST - "
+                std::cout << "PLAYER OBJECT ON CONNECT: HOST: "
                           << static_cast<bool>(player_object.main_menu_event.host) << "\n";
 
                 if (player_object.main_menu_event.host) {
@@ -133,7 +137,9 @@ bool Server::send_data() {
 }
 
 
-void Server::disconnect() {
+void Server::disconnect(std::thread &server_thread) {
+    std::unique_lock<std::mutex> lock(server_mutex);
+
     tick = UINT64_MAX;
     for (auto &[client_id, client]: clients) {
         sf::Packet packet;
@@ -165,6 +171,10 @@ void Server::disconnect() {
     //packets.clear();
     active = false;
     tick = 0;
+
+    lock.unlock();
+    server_thread.join();
+    std::cout << "SERVER DISCONNECTED\n";
 }
 
 void Server::death_match() {
@@ -183,6 +193,7 @@ void Server::takeover_game_mode() {
         takeover = Takeover(map);
         takeover.init();
         takeover.game_started = true;
+        std::cout << "takeover game started\n";
     }
     if (!takeover.game_over) {
         takeover.update();
@@ -266,18 +277,13 @@ void Server::play_tick() {
             takeover.reset();
             for (auto &[id, player]: player_objects) {
                 map.players[id] = map.init_new_player(id, player.pos_x, player.pos_y, player.team);
-//                std::cout << "if(everyone_ready){\n"
-//                             "            for(auto &[id, player] : player_objects){ player : " << id << " IS ON TEAM "
-//                          << (uint32) player.team << " \n";
-
-                //std::cout << "SERVER MAP TAKEOVER PLAYER: " << id << " IS ON TEAM " << (uint32) map.players[id].team << " \n";
                 player.main_menu_event.in_game = true; // todo : THE ERROR IS CAUSED BY PLAYER TEAM NOT UPDATING ON SERVER.MAP .. WHY?
+                std::cout << "GAME SHOULD START,  updated host: " << (player.id == host_client_id) << '\n';
             }
         }
     }
 
     // game loop
-
     if (host_main_menu_event.in_game) {
 
         if (host_main_menu_event.death_match_game_mode) {
@@ -318,6 +324,28 @@ void Server::play_tick() {
     }
 }
 
+void Server::run(){
+    auto frame_duration = std::chrono::milliseconds(1000 / 60);
+
+    while(active){
+        auto frame_start = std::chrono::steady_clock::now();
+
+        std::unique_lock<std::mutex> lock(server_mutex);
+
+        receive_data();
+        play_tick();
+        send_data();
+
+        lock.unlock();
+
+        auto frame_end = std::chrono::steady_clock::now();
+        auto elapsed_time = frame_end - frame_start;
+        if (elapsed_time < frame_duration) {
+            std::this_thread::sleep_for(frame_duration - elapsed_time);
+        }
+    }
+    std::cout << "server run stopped\n";
+}
 /*
 void Server::printObjects() {
     std::cout << "\n\nOBJECTS: \n";

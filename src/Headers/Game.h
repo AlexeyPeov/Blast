@@ -43,6 +43,7 @@ private:
     sf::Font font;
     sf::View view;
     Server server;
+    std::thread server_thread;
     Client client = Client(obj::generate_random_id(), "", "", 0);
 
     sf::Shader shader;
@@ -61,26 +62,8 @@ private:
 
 
 public:
-    Game() : desktop(sf::VideoMode::getDesktopMode()),
-             window(sf::VideoMode(700, 500), "Blast", sf::Style::Titlebar | sf::Style::Close){
-        //sf::VideoMode(1600, 800), "Blast", sf::Style::Titlebar | sf::Style::Close
-        //window(desktop, "Blast", sf::Style::Fullscreen),
-        view = sf::View(sf::FloatRect(0, 0, viewSize.x, viewSize.y));
-        view.setCenter((sf::Vector2f)window.getPosition());
-        //window.setView(view);
-        window.setVerticalSyncEnabled(true);
-        // Load the font and create the label
-        font.loadFromFile(working_dir() + "/textures/DejaVuSans.ttf");
-        map.gameState = &gameState;
-        map.init_map_textures();
-        mainMenu = MainMenu(font, videoMode, client, multiplayerAction, map, gameMode);
-        map.init_map_sounds();
-        takeover = Takeover(map);
-        if (!shader.loadFromFile(working_dir() + "/shaders/invert_colors.frag", sf::Shader::Fragment)) {
-                std::cerr << "Failed to load shader\n";
-        }
-
-    }
+    Game();
+    ~Game();
 
     void run();
 

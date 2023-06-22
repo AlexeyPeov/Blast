@@ -4,8 +4,11 @@
 #include <iostream>
 #include <string>
 #include <csignal>
+#include <thread>
+#include <mutex>
 
 #include <SFML/Network.hpp>
+
 #include "Client.h"
 #include "Map.h"
 #include "Takeover.h"
@@ -20,6 +23,7 @@ using namespace obj;
 
 struct Server {
     sf::UdpSocket server_socket;
+    std::mutex server_mutex;
 
     std::unordered_map<uint64, std::unique_ptr<Client>> clients;
 
@@ -51,7 +55,7 @@ struct Server {
     bool send_data();
 
 
-    void disconnect();
+    void disconnect(std::thread &server_thread);
 
     void play_tick();
 
@@ -59,6 +63,7 @@ struct Server {
 
     void takeover_game_mode();
 
+    void run();
 };
 
 #endif

@@ -1,6 +1,32 @@
 #include "../Headers/Game.h"
 
 
+Game::Game() : desktop(sf::VideoMode::getDesktopMode()),
+               window(sf::VideoMode(700, 500), "Blast", sf::Style::Titlebar | sf::Style::Close){
+    //sf::VideoMode(1600, 800), "Blast", sf::Style::Titlebar | sf::Style::Close
+    //window(desktop, "Blast", sf::Style::Fullscreen),
+    view = sf::View(sf::FloatRect(0, 0, viewSize.x, viewSize.y));
+    view.setCenter((sf::Vector2f)window.getPosition());
+    //window.setView(view);
+    window.setVerticalSyncEnabled(true);
+    // Load the font and create the label
+    font.loadFromFile(working_dir() + "/textures/DejaVuSans.ttf");
+    map.gameState = &gameState;
+    map.init_map_textures();
+    mainMenu = MainMenu(font, videoMode, client, multiplayerAction, map, gameMode);
+    map.init_map_sounds();
+    takeover = Takeover(map);
+
+    if (!shader.loadFromFile(working_dir() + "/shaders/invert_colors.frag", sf::Shader::Fragment)) {
+        std::cerr << "Failed to load shader\n";
+    }
+
+}
+
+Game::~Game(){
+    server_thread.join();
+}
+
 void Game::run() {
     auto frame_duration = std::chrono::milliseconds(1000 / 60);
 
@@ -60,7 +86,7 @@ void Game::run() {
             if (event.type == sf::Event::Closed) {
                 if(client.active){
                     client.disconnect();
-                    server.disconnect();
+                    server.disconnect(server_thread);
                 }
                 if(server.active){
                     server.active = false;
@@ -92,7 +118,7 @@ void Game::run() {
                 if (event.key.code == sf::Keyboard::Key::RBracket) {
                     if (server.active) {
                         server.active = false;
-                        server.disconnect();
+                        server.disconnect(server_thread);
                         std::cout << "Stopping server..\n";
                     }
                     if (client.active) {
@@ -105,10 +131,12 @@ void Game::run() {
         }
 
         window.clear();
-        if (server.active) {
-            server.receive_data();
-            server.play_tick();
-        }
+
+//        if (server.active) {
+//            server.receive_data();
+//            server.play_tick();
+//        }
+
         if (client.active) {
             client.receive_data();
             map.update_online(client.player_objects, client.missile_objects, client.bomb_object);
@@ -119,7 +147,7 @@ void Game::run() {
             mainMenu.draw(window);
             if(mainMenu.menuState == MenuState::MAIN_MENU){
                 if(server.active){
-                    server.disconnect();
+                    server.disconnect(server_thread);
                 }
                 if(client.active){
                     client.disconnect();
@@ -190,9 +218,9 @@ void Game::run() {
             map.players[map.main_player_id].transfer_data_to(client.player_event, gained_focus);
             client.send_data();
         }
-        if (server.active) {
-            server.send_data();
-        }
+//        if (server.active) {
+//            server.send_data();
+//        }
 
 
         window.display();
@@ -212,6 +240,7 @@ void Game::handleMultiplayerAction() {
     if (multiplayerAction == MultiplayerAction::START_SERVER_AND_CLIENT) {
         if (!server.active) {
             server.set_listener();
+            server_thread = std::thread(&Server::run, &server);
             //client.connect(mainMenu.ipInput.inputString, mainMenu.portInput.toInt());
             client.connect(mainMenu.ipInput.inputString, mainMenu.portInput.toUint16());
         }
@@ -227,7 +256,7 @@ void Game::handleMultiplayerAction() {
     if (multiplayerAction == MultiplayerAction::STOP_SERVER_AND_CLIENT) {
         if (server.active) {
             server.active = false;
-            server.disconnect();
+            server.disconnect(server_thread);
             std::cout << "Stopping server..\n";
         }
         if (client.active) {
@@ -599,7 +628,7 @@ void Game::draw_in_game_pause_menu() {
             multiplayerAction = MultiplayerAction::STOP_SERVER_AND_CLIENT;
             client.player_object = PlayerObject();
             client.disconnect();
-            server.disconnect();
+            server.disconnect(server_thread);
             gameState = GameState::MAIN_MENU;
             mainMenu.menuState = MenuState::MAIN_MENU;
             takeover.reset();
