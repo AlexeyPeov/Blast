@@ -7,6 +7,7 @@
 #include <string>
 #include <iostream>
 #include <random>
+#include <filesystem>
 
 #include <SFML/Network.hpp>
 #include <SFML/Graphics.hpp>
