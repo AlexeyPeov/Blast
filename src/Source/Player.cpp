@@ -200,7 +200,7 @@ void Player::plant_bomb(sf::Sprite &plant_area, std::pair<bool, sf::Sprite> &bom
             plant_or_defuse_timer++;
             plant_animation.sprite.setPosition(sprite.getPosition());
             plant_animation.update();
-            std::cout << "PLANT ANIM " << plant_animation.elapsedTime << " " << plant_animation.currentFrame << "\n";
+            //std::cout << "PLANT ANIM " << plant_animation.elapsedTime << " " << plant_animation.currentFrame << "\n";
             if(plant_or_defuse_timer >= PLANT_TIME){
                 player_state.planted_bomb = true;
                 player_state.dropping_bomb = true;

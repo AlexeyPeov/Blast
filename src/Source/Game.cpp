@@ -23,9 +23,7 @@ Game::Game() : desktop(sf::VideoMode::getDesktopMode()),
 
 }
 
-Game::~Game(){
-    server_thread.join();
-}
+Game::~Game() = default;
 
 void Game::run() {
     auto frame_duration = std::chrono::milliseconds(1000 / 60);
@@ -86,10 +84,9 @@ void Game::run() {
             if (event.type == sf::Event::Closed) {
                 if(client.active){
                     client.disconnect();
-                    server.disconnect(server_thread);
                 }
                 if(server.active){
-                    server.active = false;
+                    server.disconnect(server_thread);
                 }
                 is_running = false;
             }

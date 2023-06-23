@@ -666,11 +666,11 @@ void Map::draw_plant_defuse_animations(sf::RenderWindow &window) {
     for(auto &[id, player] : players){
         if (player.plant_animation.elapsedTime > 0) {
             window.draw(player.plant_animation.sprite);
-            std::cout << "DRAWING PLANT ANIM\n";
+            //std::cout << "DRAWING PLANT ANIM\n";
         }
         if (player.defuse_animation.elapsedTime > 0) {
             window.draw(player.defuse_animation.sprite);
-            std::cout << "DRAWING DEFUSE ANIM\n";
+            //std::cout << "DRAWING DEFUSE ANIM\n";
         }
     }
 }

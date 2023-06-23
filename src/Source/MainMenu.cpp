@@ -271,7 +271,7 @@ void MainMenu::drawMultiplayerLobby(sf::RenderWindow &window) {
         //if(host){
             text4.setFillColor(sf::Color::Yellow);
             if (Mouse::clicked()) {
-                client->player_event.ready_button_pressed = true;
+                client->player_event.ready_button_pressed = ~client->player_event.ready_button_pressed;
             }
       //  }
     } else if (Mouse::cursorCollidesWithItem(mousePos, text5.getGlobalBounds())) {

@@ -148,13 +148,19 @@ void Server::disconnect(std::thread &server_thread) {
         for (auto &[id, object]: player_objects) {
             packet << object;
         }
-        if (client->socket.send(packet, client->client_ip, client->host_port) != sf::Socket::Done) {
-#ifdef SERVER_DEBUG_SEND
-            std::cerr << "cl:" << client->id << "-";
-#endif
+
+        for(int i = 0; i < 30; i++){
+            client->socket.send(packet, client->client_ip, client->host_port);
         }
+
+//        if (client->socket.send(packet, client->client_ip, client->host_port) != sf::Socket::Done) {
+//#ifdef SERVER_DEBUG_SEND
+//            std::cerr << "cl:" << client->id << "-";
+//#endif
+//        }
     }
     server_socket.unbind();
+
     clients.clear();
     player_objects.clear();
     missile_objects.clear();
@@ -191,7 +197,6 @@ void Server::takeover_game_mode() {
         std::cout << "SERVER LEVEL " << level << "\n";
         map.init_walls(level);
         takeover = Takeover(map);
-        takeover.init();
         takeover.game_started = true;
         std::cout << "takeover game started\n";
     }
@@ -238,7 +243,7 @@ void Server::play_tick() {
             object.main_menu_event.takeover_game_mode = true;
         }
         if (player_event.ready_button_pressed) {
-            object.main_menu_event.ready_to_play = ~object.main_menu_event.ready_to_play;
+            object.main_menu_event.ready_to_play = true;
         }
 
         if(!object.main_menu_event.ready_to_play){
@@ -282,6 +287,10 @@ void Server::play_tick() {
             }
         }
     }
+
+//    for(auto&[id, player] : player_objects){
+//        std::cout << "PLAYER " << id <<   " IN GAME: "   << (bool)player.main_menu_event.in_game << '\n';
+//    }
 
     // game loop
     if (host_main_menu_event.in_game) {
