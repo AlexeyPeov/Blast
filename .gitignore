@@ -5,5 +5,4 @@ cmake-build-debug
 .idea
 cmake-build-debug-coverage
 cmake-build-release
-server_config.txt
 windows release

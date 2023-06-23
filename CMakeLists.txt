@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 
 
-if(LINUX)
+if(UNIX)
 
     set(SFML_DIR "${CMAKE_CURRENT_SOURCE_DIR}/SFML-2.5.1_linux/lib/cmake/SFML")
 
