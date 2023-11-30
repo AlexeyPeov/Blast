@@ -1,6 +1,10 @@
 #include "../Headers/Client.h"
 
 
+
+Client::Client(){
+    this->id = generate_random_id();
+}
 //bool Client::connect(std::string address, uint16_t port) {
 //    this->socket.setBlocking(false);
 //    this->host_ip = address;

@@ -36,15 +36,15 @@ struct Client {
     uint16 host_port = 53000;
     std::vector<PlayerObject> player_objects;
     std::vector<MissileObject> missile_objects;
-    PlayerEvent player_event;
+    PlayerEvent player_event = {0};
 
-    PlayerObject player_object;
-    BombObject bomb_object;
+    PlayerObject player_object = {0};
+    BombObject bomb_object = {0};
 
     bool active = false;
     bool host = false;
 
-    Client(){}
+    Client();
     ~Client(){}
 
     Client(uint64 id, sf::IpAddress host_ip, sf::IpAddress client_ip, uint16 port){

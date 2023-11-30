@@ -207,6 +207,8 @@ void Server::takeover_game_mode() {
 
 
 void Server::play_tick() {
+    if(tick == 0) return;
+
     MainMenuEvent host_main_menu_event = player_objects[host_client_id].main_menu_event;
     std::vector<std::pair<uint64, PlayerEvent>> player_events;
 
@@ -271,7 +273,7 @@ void Server::play_tick() {
 
     if (!host_main_menu_event.in_game) {
         bool everyone_ready = true;
-
+        if(player_objects.empty()) everyone_ready = false;
         for (auto &[id, player]: player_objects) {
             if (!player.main_menu_event.ready_to_play) {
                 everyone_ready = false;
